@@ -17,7 +17,7 @@ Uma plataforma web simples para criar e participar de apostas entre amigos. Sem 
 - Tailwind CSS
 - React
 
-## Como executar
+## Configuração do Ambiente
 
 1. Clone o repositório:
 ```bash
@@ -29,6 +29,17 @@ cd apostafacil
 ```bash
 npm install
 ```
+
+3. Copie o arquivo `.env.example` para `.env.local`:
+```bash
+cp .env.example .env.local
+```
+
+4. Preencha as variáveis de ambiente no arquivo `.env.local`:
+- `NEXT_PUBLIC_SUPABASE_URL`: URL do seu projeto Supabase
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Chave anônima do Supabase
+
+## Desenvolvimento
 
 3. Execute o servidor de desenvolvimento:
 ```bash
@@ -65,3 +76,16 @@ Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar
 ## Licença
 
 MIT
+
+## Build
+
+```bash
+npm run build
+```
+
+## Deploy
+
+O projeto está configurado para deploy na Vercel. Certifique-se de configurar as variáveis de ambiente no painel da Vercel:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
