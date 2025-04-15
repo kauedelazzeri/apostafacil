@@ -1,45 +1,108 @@
-import { Bet } from '@/types/bet'
+import { Bet, Vote } from '@/types/bet'
+import { supabase } from './supabase'
 
-const STORAGE_KEY = 'apostafacil_bets'
+export const getBet = async (id: string) => {
+  const { data, error } = await supabase
+    .from('apostas')
+    .select('*')
+    .eq('id', id)
+    .single()
 
-// Initialize storage from localStorage
-const initializeStorage = () => {
-  if (typeof window !== 'undefined') {
-    const storedBets = localStorage.getItem(STORAGE_KEY)
-    if (storedBets) {
-      return JSON.parse(storedBets)
-    }
+  if (error) {
+    console.error('Error fetching bet:', error)
+    return null
   }
-  return []
+
+  return data
 }
 
-// In-memory storage with localStorage backup
-const bets: Bet[] = initializeStorage()
-
-// Helper functions
-export const getBet = (id: string) => {
-  return bets.find((bet) => bet.id === id)
-}
-
-export const addBet = (bet: Bet) => {
-  bets.push(bet)
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(bets))
+export const addBet = async (bet: Omit<Bet, 'id' | 'created_at'>) => {
+  console.log('Adding bet:', bet)
+  
+  // Ensure opcoes is a valid array
+  if (!Array.isArray(bet.opcoes) || bet.opcoes.some(opt => typeof opt !== 'string')) {
+    throw new Error('Opções inválidas: todas as opções devem ser strings')
   }
-  return bet
-}
+  
+  const { data, error } = await supabase
+    .from('apostas')
+    .insert([{
+      ...bet,
+      opcoes: bet.opcoes // Ensure it's passed as a proper array
+    }])
+    .select()
+    .single()
 
-export const updateBet = (updatedBet: Bet) => {
-  const index = bets.findIndex((bet) => bet.id === updatedBet.id)
-  if (index !== -1) {
-    bets[index] = updatedBet
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(bets))
-    }
+  if (error) {
+    console.error('Error adding bet:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    })
+    throw new Error(`Error adding bet: ${error.message}`)
   }
-  return updatedBet
+
+  console.log('Bet added successfully:', data)
+  return data
 }
 
-export const getAllBets = () => {
-  return bets
+export const updateBet = async (updatedBet: Bet) => {
+  const { data, error } = await supabase
+    .from('apostas')
+    .update(updatedBet)
+    .eq('id', updatedBet.id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating bet:', error)
+    throw error
+  }
+
+  return data
+}
+
+export const getAllBets = async () => {
+  const { data, error } = await supabase
+    .from('apostas')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching bets:', error)
+    return []
+  }
+
+  return data
+}
+
+export const addVote = async (vote: Omit<Vote, 'id' | 'created_at'>) => {
+  const { data, error } = await supabase
+    .from('apostas_feitas')
+    .insert([vote])
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error adding vote:', error)
+    throw error
+  }
+
+  return data
+}
+
+export const getVotes = async (betId: string) => {
+  const { data, error } = await supabase
+    .from('apostas_feitas')
+    .select('*')
+    .eq('aposta_id', betId)
+
+  if (error) {
+    console.error('Error fetching votes:', error)
+    return []
+  }
+
+  return data
 } 

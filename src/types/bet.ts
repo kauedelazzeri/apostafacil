@@ -1,20 +1,38 @@
 export interface Bet {
   id: string
-  title: string
-  description?: string
-  options: string[]
-  endDate: string
-  betValue: string
-  creatorName: string
-  createdAt: string
-  votes: Vote[]
-  winningOption?: string
+  titulo: string
+  descricao?: string
+  opcoes: string[]
+  valor_aposta: string
+  data_encerramento: string
+  nome_criador: string
+  email_criador: string
+  resultado_final?: string
+  created_at: string
 }
 
 export interface Vote {
   id: string
-  betId: string
-  voterName: string
-  option: string
-  createdAt: string
+  aposta_id: string
+  nome_apostador: string
+  opcao_escolhida: string
+  created_at: string
+}
+
+// Supabase types
+export type Database = {
+  public: {
+    Tables: {
+      apostas: {
+        Row: Bet
+        Insert: Omit<Bet, 'id' | 'created_at'>
+        Update: Partial<Omit<Bet, 'id' | 'created_at'>>
+      }
+      apostas_feitas: {
+        Row: Vote
+        Insert: Omit<Vote, 'id' | 'created_at'>
+        Update: Partial<Omit<Vote, 'id' | 'created_at'>>
+      }
+    }
+  }
 } 
