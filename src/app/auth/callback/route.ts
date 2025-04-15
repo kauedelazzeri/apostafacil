@@ -12,9 +12,9 @@ export async function GET(request: Request) {
   }
 
   // URL to redirect to after sign in process completes
-  const redirectUrl = process.env.NEXT_PUBLIC_VERCEL_URL 
-    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-    : requestUrl.origin
+  const redirectUrl = requestUrl.origin.includes('localhost')
+    ? requestUrl.origin
+    : `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
 
   return NextResponse.redirect(new URL('/', redirectUrl))
 } 

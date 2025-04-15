@@ -7,9 +7,9 @@ export function AuthButton() {
   const { user, isLoading } = useSupabase()
 
   const handleSignIn = async () => {
-    const redirectUrl = process.env.NEXT_PUBLIC_VERCEL_URL 
-      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/callback`
-      : `${window.location.origin}/auth/callback`
+    const redirectUrl = window.location.origin.includes('localhost')
+      ? `${window.location.origin}/auth/callback`
+      : `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/callback`
 
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -37,7 +37,7 @@ export function AuthButton() {
   if (user) {
     return (
       <div className="flex items-center gap-4">
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-white">
           Olá, {user.email}
         </span>
         <button
