@@ -65,6 +65,7 @@ export default function BetPage() {
       }
     } catch (error) {
       console.error('Error voting:', error)
+      setError('Erro ao registrar sua aposta. Por favor, tente novamente.')
       alert('Erro ao registrar sua aposta. Por favor, tente novamente.')
     }
   }
