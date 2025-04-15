@@ -7,21 +7,20 @@ import { useSupabase } from '@/providers/supabase-provider'
 
 export default function CreateBetPage() {
   const router = useRouter()
-  const { user } = useSupabase()
+  const { user, isLoading } = useSupabase()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [creatorName, setCreatorName] = useState('')
   const [betValue, setBetValue] = useState('')
   const [endDate, setEndDate] = useState('')
   const [options, setOptions] = useState<string[]>(['', ''])
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!user) {
+    if (!isLoading && !user) {
       router.push('/')
     }
-  }, [user, router])
+  }, [user, router, isLoading])
 
   const handleOptionChange = (index: number, value: string) => {
     const newOptions = [...options]
@@ -42,7 +41,6 @@ export default function CreateBetPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     setError('')
 
     try {
@@ -86,8 +84,6 @@ export default function CreateBetPage() {
     } catch (error) {
       console.error('Error creating bet:', error)
       setError(error instanceof Error ? error.message : 'Erro ao criar aposta')
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -225,10 +221,9 @@ export default function CreateBetPage() {
 
           <button
             type="submit"
-            disabled={isLoading}
             className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:bg-purple-900/50"
           >
-            {isLoading ? 'Criando...' : 'Criar Aposta'}
+            Criar Aposta
           </button>
         </form>
       </div>
