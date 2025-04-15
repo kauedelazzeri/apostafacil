@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { Bet, Vote } from '@/types/bet'
+import { Bet } from '@/types/bet'
 
 export default function BetPage() {
   const params = useParams()
@@ -75,23 +75,15 @@ export default function BetPage() {
   }
 
   if (isLoading) {
-    return (
-      <main className="min-h-screen p-4 md:p-8">
-        <div className="max-w-2xl mx-auto text-center">
-          <p>Carregando...</p>
-        </div>
-      </main>
-    )
+    return <div>Carregando...</div>
   }
 
-  if (error || !bet) {
-    return (
-      <main className="min-h-screen p-4 md:p-8">
-        <div className="max-w-2xl mx-auto text-center">
-          <p className="text-red-500">{error || 'Aposta não encontrada'}</p>
-        </div>
-      </main>
-    )
+  if (error) {
+    return <div className="text-red-500">{error}</div>
+  }
+
+  if (!bet) {
+    return <div>Aposta não encontrada</div>
   }
 
   return (

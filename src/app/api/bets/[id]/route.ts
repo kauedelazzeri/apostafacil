@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { Bet, Vote } from '@/types/bet'
+import { Vote } from '@/types/bet'
 import { getBet, updateBet } from '@/lib/storage'
 
 export async function GET(

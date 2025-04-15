@@ -14,7 +14,7 @@ const initializeStorage = () => {
 }
 
 // In-memory storage with localStorage backup
-let bets: Bet[] = initializeStorage()
+const bets: Bet[] = initializeStorage()
 
 // Helper functions
 export const getBet = (id: string) => {
