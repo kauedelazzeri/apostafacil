@@ -7,10 +7,14 @@ export function AuthButton() {
   const { user, isLoading } = useSupabase()
 
   const handleSignIn = async () => {
+    const redirectUrl = process.env.NEXT_PUBLIC_VERCEL_URL 
+      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/callback`
+      : `${window.location.origin}/auth/callback`
+
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: redirectUrl,
       },
     })
   }
