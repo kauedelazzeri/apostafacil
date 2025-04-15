@@ -146,9 +146,19 @@ export default function BetPage() {
             </div>
             <div>
               <p className="text-sm text-purple-200">Encerra em</p>
-              <p className="font-medium text-white">
-                {new Date(bet.data_encerramento).toLocaleString('pt-BR')}
-              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-purple-300">Data de Encerramento:</span>
+                <span className="font-medium">
+                  {new Date(bet.data_encerramento).toLocaleString('pt-BR', {
+                    timeZone: 'America/Sao_Paulo',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
             </div>
             <div>
               <p className="text-sm text-purple-200">Total de apostas</p>

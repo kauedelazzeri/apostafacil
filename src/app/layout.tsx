@@ -6,8 +6,33 @@ import { SupabaseProvider } from "@/providers/supabase-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Aposta Fácil",
-  description: "Crie apostas divertidas com seus amigos de forma simples e rápida!",
+  title: "Aposta Fácil - Crie e participe de apostas online",
+  description: "Plataforma para criar e participar de apostas online de forma simples e divertida",
+  openGraph: {
+    title: "Aposta Fácil",
+    description: "Crie e participe de apostas online de forma simples e divertida",
+    type: "website",
+    locale: "pt_BR",
+    siteName: "Aposta Fácil",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Aposta Fácil",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Aposta Fácil",
+    description: "Crie e participe de apostas online de forma simples e divertida",
+    images: ["/og-image.png"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
