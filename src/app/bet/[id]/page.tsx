@@ -175,22 +175,25 @@ export default function BetPage() {
               {!bet.resultado_final && (
                 <div className="mt-4">
                   <h3 className="text-lg font-medium mb-2 text-white">Finalizar Aposta</h3>
-                  <select
-                    value={finalResult}
-                    onChange={(e) => setFinalResult(e.target.value)}
-                    className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
-                  >
-                    <option value="">Selecione o resultado</option>
+                  <div className="grid grid-cols-2 gap-2">
                     {bet.opcoes.map((option) => (
-                      <option key={option} value={option}>
+                      <button
+                        key={option}
+                        onClick={() => setFinalResult(option)}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          finalResult === option
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-white/10 text-white hover:bg-white/20'
+                        }`}
+                      >
                         {option}
-                      </option>
+                      </button>
                     ))}
-                  </select>
+                  </div>
                   <button
                     onClick={handleFinalizeBet}
                     disabled={!finalResult}
-                    className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-purple-900/50 transition-colors"
+                    className="mt-4 w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-purple-900/50 transition-colors"
                   >
                     Finalizar Aposta
                   </button>
@@ -202,40 +205,44 @@ export default function BetPage() {
           {!isCreator && !bet.resultado_final && (
             <form onSubmit={handleVote} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-purple-200 mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Seu Nome *
                 </label>
                 <input
                   type="text"
                   value={voterName}
                   onChange={(e) => setVoterName(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-purple-300"
                   required
+                  placeholder="Digite seu nome"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-purple-200 mb-1">
+                <label className="block text-sm font-medium text-white mb-2">
                   Sua Aposta *
                 </label>
-                <select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
-                  required
-                >
-                  <option value="">Selecione uma opção</option>
+                <div className="grid grid-cols-2 gap-2">
                   {bet.opcoes.map((option) => (
-                    <option key={option} value={option}>
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setSelectedOption(option)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        selectedOption === option
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-white/10 text-white hover:bg-white/20'
+                      }`}
+                    >
                       {option}
-                    </option>
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !selectedOption}
                 className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:bg-purple-900/50"
               >
                 {isLoading ? 'Registrando...' : 'Fazer Aposta'}
