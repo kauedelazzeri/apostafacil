@@ -2,6 +2,8 @@
 
 Uma plataforma web simples para criar e participar de apostas entre amigos. Sem autenticação, sem pagamentos, apenas diversão!
 
+🔗 Acesse em: [https://apostafacil.vercel.app/](https://apostafacil.vercel.app/)
+
 ## Funcionalidades
 
 - Criar apostas com opções personalizadas
