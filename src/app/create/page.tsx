@@ -14,6 +14,7 @@ export default function CreateBetPage() {
   const [betValue, setBetValue] = useState('')
   const [endDate, setEndDate] = useState('')
   const [options, setOptions] = useState<string[]>(['', ''])
+  const [visibility, setVisibility] = useState<'public' | 'private'>('public')
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -72,6 +73,7 @@ export default function CreateBetPage() {
         data_encerramento: endDate,
         nome_criador: creatorName,
         email_criador: user.email || '',
+        visibilidade: visibility,
       })
 
       // Show success message and copy link
@@ -178,6 +180,39 @@ export default function CreateBetPage() {
                   className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">
+                  Visibilidade da Aposta *
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      value="public"
+                      checked={visibility === 'public'}
+                      onChange={(e) => setVisibility(e.target.value as 'public' | 'private')}
+                      className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                    />
+                    <span className="text-white">Pública</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      value="private"
+                      checked={visibility === 'private'}
+                      onChange={(e) => setVisibility(e.target.value as 'public' | 'private')}
+                      className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                    />
+                    <span className="text-white">Privada (apenas você pode ver)</span>
+                  </label>
+                </div>
+                <p className="mt-1 text-sm text-purple-200">
+                  {visibility === 'public' 
+                    ? 'Qualquer pessoa poderá ver e participar desta aposta'
+                    : 'Apenas você poderá ver e participar desta aposta'}
+                </p>
               </div>
             </div>
           </div>
