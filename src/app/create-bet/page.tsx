@@ -2,15 +2,19 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSupabase } from '@/providers/supabase-provider'
 
 export default function CreateBet() {
   const router = useRouter()
+  const { user } = useSupabase()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [options, setOptions] = useState(['', ''])
   const [endDate, setEndDate] = useState('')
   const [betValue, setBetValue] = useState('')
   const [creatorName, setCreatorName] = useState('')
+  const [visibility, setVisibility] = useState<'public' | 'private'>('public')
+  const [error, setError] = useState('')
 
   const handleOptionChange = (index: number, value: string) => {
     const newOptions = [...options]
@@ -33,15 +37,21 @@ export default function CreateBet() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
     
+    if (!user) {
+      setError('Você precisa estar logado para criar uma aposta')
+      return
+    }
+
     // Basic validation
     if (!title || !endDate || !betValue || !creatorName) {
-      alert('Por favor, preencha todos os campos obrigatórios')
+      setError('Por favor, preencha todos os campos obrigatórios')
       return
     }
 
     if (options.some(option => !option)) {
-      alert('Por favor, preencha todas as opções')
+      setError('Por favor, preencha todas as opções')
       return
     }
 
@@ -52,32 +62,58 @@ export default function CreateBet() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title,
-          description,
-          options,
-          endDate,
-          betValue,
-          creatorName,
+          titulo: title,
+          descricao: description,
+          opcoes: options,
+          data_encerramento: endDate,
+          valor_aposta: betValue,
+          nome_criador: creatorName,
+          email_criador: user.email,
+          visibilidade: visibility,
         }),
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        router.push(`/bet/${data.id}`)
-      } else {
-        throw new Error('Failed to create bet')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao criar aposta')
       }
+
+      const data = await response.json()
+      router.push(`/bet/${data.id}`)
     } catch (error) {
       console.error('Error creating bet:', error)
-      alert('Erro ao criar a aposta. Por favor, tente novamente.')
+      setError(error instanceof Error ? error.message : 'Erro ao criar a aposta')
     }
   }
 
+  if (!user) {
+    return (
+      <main className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">
+        <div className="max-w-2xl mx-auto text-center">
+          <h1 className="text-3xl font-bold mb-4">Acesso Restrito</h1>
+          <p className="text-lg mb-6">Você precisa estar logado para criar uma aposta.</p>
+          <button
+            onClick={() => router.push('/')}
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Voltar para Home
+          </button>
+        </div>
+      </main>
+    )
+  }
+
   return (
-    <main className="min-h-screen p-4 md:p-8">
+    <main className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Criar Nova Aposta</h1>
         
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-100">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -181,9 +217,44 @@ export default function CreateBet() {
             />
           </div>
 
+          <div className="space-y-2 bg-white/10 p-4 rounded-lg">
+            <label className="block text-sm font-medium text-purple-200">
+              Visibilidade da Aposta
+            </label>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="visibility"
+                  value="public"
+                  checked={visibility === 'public'}
+                  onChange={(e) => setVisibility(e.target.value as 'public')}
+                  className="form-radio text-purple-500"
+                />
+                <span>Pública (aparece na listagem)</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="visibility"
+                  value="private"
+                  checked={visibility === 'private'}
+                  onChange={(e) => setVisibility(e.target.value as 'private')}
+                  className="form-radio text-purple-500"
+                />
+                <span>Privada (apenas com link)</span>
+              </label>
+            </div>
+            <p className="text-sm text-purple-300 mt-2">
+              {visibility === 'public' 
+                ? 'Qualquer pessoa poderá ver esta aposta na listagem principal'
+                : 'Esta aposta só será acessível através do link direto'}
+            </p>
+          </div>
+
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
+            className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
           >
             Criar aposta
           </button>

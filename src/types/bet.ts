@@ -8,6 +8,7 @@ export interface Bet {
   nome_criador: string
   email_criador: string
   resultado_final?: string
+  visibilidade: 'public' | 'private'
   created_at: string
 }
 

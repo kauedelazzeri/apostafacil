@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server'
 import { Bet } from '@/types/bet'
 import { addBet, getAllBets } from '@/lib/storage'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+
+// Disable caching for this route
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export async function POST(request: Request) {
   try {
     const data = await request.json()
     
     // Validate required fields
-    if (!data.title || !data.options || !data.endDate || !data.betValue || !data.creatorName) {
+    if (!data.titulo || !data.opcoes || !data.data_encerramento || !data.valor_aposta || !data.nome_criador) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -15,7 +21,7 @@ export async function POST(request: Request) {
     }
 
     // Validate options
-    if (data.options.length < 2 || data.options.length > 10) {
+    if (data.opcoes.length < 2 || data.opcoes.length > 10) {
       return NextResponse.json(
         { error: 'Number of options must be between 2 and 10' },
         { status: 400 }
@@ -23,21 +29,19 @@ export async function POST(request: Request) {
     }
 
     // Create new bet
-    const newBet: Bet = {
-      id: Math.random().toString(36).substring(2, 9),
-      title: data.title,
-      description: data.description,
-      options: data.options,
-      endDate: data.endDate,
-      betValue: data.betValue,
-      creatorName: data.creatorName,
-      createdAt: new Date().toISOString(),
-      votes: [],
+    const newBet: Omit<Bet, 'id' | 'created_at'> = {
+      titulo: data.titulo,
+      descricao: data.descricao,
+      opcoes: data.opcoes,
+      valor_aposta: data.valor_aposta,
+      data_encerramento: data.data_encerramento,
+      nome_criador: data.nome_criador,
+      email_criador: data.email_criador,
+      visibilidade: data.visibilidade || 'public',
     }
 
-    addBet(newBet)
-
-    return NextResponse.json(newBet)
+    const createdBet = await addBet(newBet)
+    return NextResponse.json(createdBet)
   } catch (error) {
     console.error('Error creating bet:', error)
     return NextResponse.json(
@@ -47,6 +51,46 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
-  return NextResponse.json(getAllBets())
+export async function GET(request: Request) {
+  try {
+    // Get the user's session from cookies
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError) {
+      console.error('Session error:', sessionError)
+      // If there's a session error, treat as not logged in
+      const publicBets = await getAllBets(null)
+      return NextResponse.json(publicBets, {
+        headers: {
+          'Cache-Control': 'no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+      })
+    }
+
+    console.log('Session user:', session?.user?.email) // Debug log
+    
+    // Get bets using the user's email (if logged in)
+    const bets = await getAllBets(session?.user?.email)
+    
+    return NextResponse.json(bets, {
+      headers: {
+        'Cache-Control': 'no-store, must-revalidate',
+        'Pragma': 'no-cache',
+      },
+    })
+  } catch (error) {
+    console.error('Error in GET /api/bets:', error)
+    // In case of error, return only public bets
+    const publicBets = await getAllBets(null)
+    return NextResponse.json(publicBets, {
+      headers: {
+        'Cache-Control': 'no-store, must-revalidate',
+        'Pragma': 'no-cache',
+      },
+    })
+  }
 } 

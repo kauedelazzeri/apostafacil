@@ -18,18 +18,18 @@ export default function Home() {
   useEffect(() => {
     const fetchBets = async () => {
       try {
-        const betsData = await getAllBets()
-        setBets(betsData)
+        const data = await getAllBets(user?.email)
+        setBets(data)
       } catch (error) {
         console.error('Error fetching bets:', error)
-        setError('Erro ao carregar apostas')
+        setError('Erro ao carregar as apostas')
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchBets()
-  }, [])
+  }, [user?.email])
 
   if (isLoading) {
     return (
