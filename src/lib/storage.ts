@@ -64,10 +64,22 @@ export const updateBet = async (updatedBet: Bet) => {
   return data
 }
 
-export const getAllBets = async () => {
-  const { data, error } = await supabase
+export const getAllBets = async (userEmail?: string | null) => {
+  console.log('Fetching bets for user:', userEmail) // Debug log
+
+  let query = supabase
     .from('apostas')
     .select('*')
+
+  if (!userEmail) {
+    console.log('No user email, filtering public bets only') // Debug log
+    query = query.eq('visibilidade', 'public')
+  } else {
+    console.log('User email found, including private bets') // Debug log
+    query = query.or(`and(visibilidade.eq.public),and(visibilidade.eq.private,email_criador.eq.${userEmail})`)
+  }
+
+  const { data, error } = await query
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -75,7 +87,8 @@ export const getAllBets = async () => {
     return []
   }
 
-  return data
+  console.log('Fetched bets:', data?.length, 'bets') // Debug log
+  return data || []
 }
 
 export const addVote = async (vote: Omit<Vote, 'id' | 'created_at'>) => {
