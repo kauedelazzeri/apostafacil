@@ -1,23 +1,92 @@
-# Aposta Fácil
+# Aposta Fácil 🎲
 
-Uma plataforma web simples para criar e participar de apostas entre amigos. Sem autenticação, sem pagamentos, apenas diversão!
+Uma plataforma moderna e intuitiva para criar e participar de apostas online com amigos. Desenvolvida com Next.js, Supabase e Tailwind CSS.
 
-🔗 Acesse em: [https://apostafacil.vercel.app/](https://apostafacil.vercel.app/)
+## 🚀 Como Usar
 
-## Funcionalidades
+### 1. Visualizando Apostas
+![Tela Principal - Visualização de Apostas](public/images/2025-05-03%2017_38_17-.png)
 
-- Criar apostas com opções personalizadas
-- Compartilhar apostas via link único
-- Participar de apostas sem necessidade de cadastro
-- Visualizar resultados em tempo real
-- Interface responsiva para mobile
+Na tela inicial, você pode ver todas as apostas ativas. Aqui você pode:
+- Visualizar todas as apostas disponíveis
+- Ver detalhes como valor, data de encerramento e número de participantes
+- Participar de qualquer aposta clicando nela
+- Compartilhar apostas com amigos
 
-## Tecnologias
+### 2. Login e Criação
+![Tela Principal - Usuário Logado](public/images/2025-05-03%2017_38_38-.png)
 
-- Next.js 14
-- TypeScript
-- Tailwind CSS
-- React
+Para criar suas próprias apostas:
+1. Clique em "Entrar com Google" no canto superior direito
+2. Após o login, o botão "Criar Nova Aposta" aparecerá
+3. Agora você tem acesso a todas as funcionalidades de criação
+
+### 3. Criando uma Nova Aposta
+![Criação de Aposta](public/images/2025-05-03%2017_38_44-.png)
+
+No formulário de criação, você pode:
+- Definir um título e descrição para sua aposta
+- Estabelecer o valor que cada participante deve pagar
+- Escolher a data de encerramento
+- Adicionar quantas opções desejar (mínimo de 2)
+- Personalizar cada opção da aposta
+
+### 4. Gerenciando sua Aposta
+![Detalhes da Aposta](public/images/2025-05-03%2017_38_54-.png)
+
+Após criar a aposta, você terá acesso a:
+- Link para compartilhar com amigos
+- Acompanhamento em tempo real das apostas
+- Lista de participantes e suas escolhas
+- Opção para finalizar a aposta quando chegar a data
+- Cálculo automático dos valores para os ganhadores
+
+## ✨ Funcionalidades
+
+### Para Todos os Usuários
+- Visualização de todas as apostas ativas
+- Participação em apostas existentes
+- Interface intuitiva e responsiva
+- Compartilhamento fácil via WhatsApp e outras redes
+
+### Para Usuários Logados
+- Criação de novas apostas personalizadas
+- Gerenciamento de apostas criadas
+- Finalização de apostas com definição de ganhadores
+- Cálculo automático de valores para os ganhadores
+
+## 🛠️ Tecnologias
+
+- **Frontend**: Next.js 14, React, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth)
+- **Deploy**: Vercel
+- **Autenticação**: Google OAuth
+
+## 🌐 Acesse em
+
+[Aposta Fácil](https://apostafacil.vercel.app)
+
+## 🔒 Privacidade e Segurança
+
+- Autenticação segura via Google
+- Dados protegidos no Supabase
+- Sem armazenamento de informações sensíveis
+- Transações transparentes e rastreáveis
+
+## 📱 Responsividade
+
+A plataforma é totalmente responsiva, funcionando perfeitamente em:
+- Desktops
+- Tablets
+- Smartphones
+
+## 🤝 Contribuindo
+
+Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar pull requests.
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ## Configuração do Ambiente
 
@@ -70,14 +139,6 @@ src/
 - Este é um MVP e usa armazenamento em memória. Em produção, recomenda-se usar um banco de dados.
 - Não há autenticação ou pagamentos reais.
 - O criador da aposta é responsável por coletar e distribuir os valores.
-
-## Contribuição
-
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar pull requests.
-
-## Licença
-
-MIT
 
 ## Build
 
