@@ -41,8 +41,10 @@ export default function CreateBetPage() {
   }
 
   const addOption = () => {
-    setOptions([...options, ''])
-    setFormInteractions(prev => prev + 1)
+    if (options.length < 10) {
+      setOptions([...options, ''])
+      setFormInteractions(prev => prev + 1)
+    }
   }
 
   const removeOption = (index: number) => {
@@ -274,10 +276,14 @@ export default function CreateBetPage() {
               <button
                 type="button"
                 onClick={addOption}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                disabled={options.length >= 10}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
               >
                 + Adicionar Opção
               </button>
+              {options.length >= 10 && (
+                <span className="text-red-300 text-sm">Limite de 10 opções atingido</span>
+              )}
             </div>
 
             <div className="space-y-4">

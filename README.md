@@ -109,6 +109,7 @@ cp .env.example .env.local
 4. Preencha as variáveis de ambiente no arquivo `.env.local`:
 - `NEXT_PUBLIC_SUPABASE_URL`: URL do seu projeto Supabase
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Chave anônima do Supabase
+- `NEXT_PUBLIC_AMPLITUDE_API_KEY`: Chave do Amplitude (opcional)
 
 ## Desenvolvimento
 
@@ -129,14 +130,14 @@ src/
 │   ├── create-bet/       # Página de criação
 │   └── page.tsx          # Home page
 ├── lib/                   # Utilitários
-│   └── storage.ts        # Armazenamento em memória
+│   └── storage.ts        # Integração com Supabase
 └── types/                # Definições de tipos
     └── bet.ts           # Tipos de apostas
 ```
 
 ## Notas
 
-- Este é um MVP e usa armazenamento em memória. Em produção, recomenda-se usar um banco de dados.
+- Este é um MVP e utiliza Supabase para persistência. Em produção, recomenda-se revisar a configuração do banco de dados.
 - Não há autenticação ou pagamentos reais.
 - O criador da aposta é responsável por coletar e distribuir os valores.
 
