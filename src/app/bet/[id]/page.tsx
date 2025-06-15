@@ -375,7 +375,7 @@ export default function BetPage() {
             </div>
           )}
 
-          {!isCreator && !bet.resultado_final && (
+          {!isCreator && !bet.resultado_final && (bet.permitir_sem_login || user) && (
             <form onSubmit={handleVote} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Seu Nome *</label>
@@ -423,6 +423,12 @@ export default function BetPage() {
                 {isLoading ? 'Registrando...' : 'Registrar Aposta'}
               </button>
             </form>
+          )}
+
+          {!isCreator && !bet.resultado_final && !bet.permitir_sem_login && !user && (
+            <p className="mt-4 text-center text-purple-200">
+              Faça login para registrar sua aposta
+            </p>
           )}
 
           {bet.resultado_final && (

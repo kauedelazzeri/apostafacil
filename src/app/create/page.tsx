@@ -17,6 +17,7 @@ export default function CreateBetPage() {
   const [endDate, setEndDate] = useState('')
   const [options, setOptions] = useState<string[]>(['', ''])
   const [visibility, setVisibility] = useState<'public' | 'private'>('public')
+  const [allowGuest, setAllowGuest] = useState(true)
   const [error, setError] = useState('')
   const [formInteractions, setFormInteractions] = useState(0)
 
@@ -68,6 +69,7 @@ export default function CreateBetPage() {
         endDate,
         optionsCount: options.length,
         visibility,
+        allowGuest,
         formInteractions
       },
       timestamp: new Date().toISOString()
@@ -90,6 +92,7 @@ export default function CreateBetPage() {
         data_encerramento: endDate,
         opcoes: options.filter(opt => opt.trim() !== ''),
         visibilidade: visibility,
+        permitir_sem_login: allowGuest,
         email_criador: user.email,
       }
 
@@ -101,6 +104,7 @@ export default function CreateBetPage() {
         betId: newBet.id,
         betTitle: newBet.titulo,
         betType: newBet.visibilidade,
+        allowGuest: newBet.permitir_sem_login,
         optionsCount: newBet.opcoes.length,
         betValue: newBet.valor_aposta,
         endDate: newBet.data_encerramento,
@@ -125,6 +129,7 @@ export default function CreateBetPage() {
           endDate,
           optionsCount: options.length,
           visibility,
+          allowGuest,
           formInteractions
         },
         timestamp: new Date().toISOString()
@@ -259,11 +264,45 @@ export default function CreateBetPage() {
                     setVisibility(e.target.value as 'public' | 'private')
                     trackFieldChange('visibility', e.target.value)
                   }}
-                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
                 >
                   <option value="public">Pública</option>
                   <option value="private">Privada</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Permitir apostas sem login?</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="allowGuest"
+                      value="true"
+                      checked={allowGuest}
+                      onChange={() => {
+                        setAllowGuest(true)
+                        trackFieldChange('allowGuest', 'true')
+                      }}
+                      className="form-radio text-purple-500"
+                    />
+                    <span className="text-gray-200">Sim</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="allowGuest"
+                      value="false"
+                      checked={!allowGuest}
+                      onChange={() => {
+                        setAllowGuest(false)
+                        trackFieldChange('allowGuest', 'false')
+                      }}
+                      className="form-radio text-purple-500"
+                    />
+                    <span className="text-gray-200">Não</span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
