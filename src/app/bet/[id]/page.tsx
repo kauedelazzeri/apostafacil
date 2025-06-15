@@ -6,14 +6,16 @@ import { getBet, addVote, getVotes, updateBet } from '@/lib/storage'
 import { useSupabase } from '@/providers/supabase-provider'
 import { Bet, Vote } from '@/types/bet'
 import { ShareButton } from '@/components/share-button'
+import { AuthButton } from '@/components/auth-button'
 import { track } from '@/lib/amplitude'
 import { ANALYTICS_EVENTS, getBetProperties, getUserProperties, getVoteProperties } from '@/lib/analytics'
 
 export default function BetPage() {
   const params = useParams()
   const router = useRouter()
-  const { user } = useSupabase()
+  const { user, isLoading: isAuthLoading } = useSupabase()
   const [bet, setBet] = useState<Bet | null>(null)
+  const [isBetLoading, setIsBetLoading] = useState(true)
   const [votes, setVotes] = useState<Vote[]>([])
   const [voterName, setVoterName] = useState('')
   const [selectedOption, setSelectedOption] = useState('')
@@ -24,8 +26,16 @@ export default function BetPage() {
   const [formInteractions, setFormInteractions] = useState(0)
 
   useEffect(() => {
+    if (user) {
+      setVoterName(user.email)
+    }
+  }, [user])
+
+  useEffect(() => {
     const fetchData = async () => {
       if (!params.id) return
+
+      setIsBetLoading(true)
 
       // Track page view
       track(ANALYTICS_EVENTS.PAGE_VIEW, {
@@ -44,6 +54,7 @@ export default function BetPage() {
           user: user ? getUserProperties(user) : null,
           timestamp: new Date().toISOString()
         });
+        setIsBetLoading(false)
         return
       }
 
@@ -61,6 +72,7 @@ export default function BetPage() {
         user: user ? getUserProperties(user) : null,
         timestamp: new Date().toISOString()
       });
+      setIsBetLoading(false)
     }
 
     fetchData()
@@ -108,7 +120,7 @@ export default function BetPage() {
       });
       
       // Clear form
-      setVoterName('')
+      setVoterName(user ? user.email : '')
       setSelectedOption('')
       setFormInteractions(0)
       
@@ -196,8 +208,31 @@ export default function BetPage() {
     });
   }
 
+  if (isAuthLoading || isBetLoading) {
+    return (
+      <div className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">
+        Carregando...
+      </div>
+    )
+  }
+
   if (!bet) {
-    return <div className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">Carregando...</div>
+    if (!user) {
+      return (
+        <div className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">
+          <div className="max-w-2xl mx-auto text-center space-y-4">
+            <p>Você precisa estar logado via Google para visualizar esta aposta.</p>
+            <AuthButton />
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">
+        {error || 'Aposta não encontrada ou você não tem permissão para visualizá-la.'}
+      </div>
+    )
   }
 
   // Calculate vote counts and winners
@@ -340,18 +375,21 @@ export default function BetPage() {
             </div>
           )}
 
-          {!isCreator && !bet.resultado_final && (
+          {!isCreator && !bet.resultado_final && (bet.permitir_sem_login || user) && (
             <form onSubmit={handleVote} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Seu Nome *</label>
                 <input
                   type="text"
                   value={voterName}
+                  disabled={!!user}
                   onChange={(e) => {
-                    setVoterName(e.target.value)
-                    trackFieldChange('voterName', e.target.value)
+                    if (!user) {
+                      setVoterName(e.target.value)
+                      trackFieldChange('voterName', e.target.value)
+                    }
                   }}
-                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-purple-300"
+                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-purple-300 disabled:opacity-70"
                   placeholder="Como você quer ser identificado"
                   required
                 />
@@ -385,6 +423,12 @@ export default function BetPage() {
                 {isLoading ? 'Registrando...' : 'Registrar Aposta'}
               </button>
             </form>
+          )}
+
+          {!isCreator && !bet.resultado_final && !bet.permitir_sem_login && !user && (
+            <p className="mt-4 text-center text-purple-200">
+              Faça login para registrar sua aposta
+            </p>
           )}
 
           {bet.resultado_final && (

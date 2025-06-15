@@ -26,10 +26,13 @@ export const addBet = async (bet: Omit<Bet, 'id' | 'created_at'>) => {
   
   const { data, error } = await supabase
     .from('apostas')
-    .insert([{
-      ...bet,
-      opcoes: bet.opcoes // Ensure it's passed as a proper array
-    }])
+    .insert([
+      {
+        ...bet,
+        opcoes: bet.opcoes, // Ensure it's passed as a proper array
+        permitir_sem_login: bet.permitir_sem_login
+      }
+    ])
     .select()
     .single()
 

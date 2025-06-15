@@ -38,6 +38,7 @@ export async function POST(request: Request) {
       nome_criador: data.nome_criador,
       email_criador: data.email_criador,
       visibilidade: data.visibilidade || 'public',
+      permitir_sem_login: data.permitir_sem_login ?? false,
     }
 
     const createdBet = await addBet(newBet)
