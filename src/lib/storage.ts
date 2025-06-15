@@ -76,7 +76,13 @@ export const getAllBets = async (userEmail?: string | null) => {
     query = query.eq('visibilidade', 'public')
   } else {
     console.log('User email found, including private bets') // Debug log
-    query = query.or(`and(visibilidade.eq.public),and(visibilidade.eq.private,email_criador.eq.${userEmail})`)
+    // Include both public bets and private bets created by the current user
+    // Wrap the email in quotes to avoid parsing issues with special characters
+    query = query.or(
+      `visibilidade.eq.public,and(visibilidade.eq.private,email_criador.eq.${JSON.stringify(
+        userEmail
+      )})`
+    )
   }
 
   const { data, error } = await query
