@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { SupabaseProvider } from "@/providers/supabase-provider";
+import { AmplitudeProvider } from "@/components/AmplitudeProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -44,7 +45,9 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className={`${inter.className} bg-gray-50`}>
         <SupabaseProvider>
-          {children}
+          <AmplitudeProvider>
+            {children}
+          </AmplitudeProvider>
         </SupabaseProvider>
       </body>
     </html>

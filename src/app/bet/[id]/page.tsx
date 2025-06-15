@@ -6,6 +6,8 @@ import { getBet, addVote, getVotes, updateBet } from '@/lib/storage'
 import { useSupabase } from '@/providers/supabase-provider'
 import { Bet, Vote } from '@/types/bet'
 import { ShareButton } from '@/components/share-button'
+import { track } from '@/lib/amplitude'
+import { ANALYTICS_EVENTS, getBetProperties, getUserProperties, getVoteProperties } from '@/lib/analytics'
 
 export default function BetPage() {
   const params = useParams()
@@ -19,14 +21,29 @@ export default function BetPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [isCreator, setIsCreator] = useState(false)
+  const [formInteractions, setFormInteractions] = useState(0)
 
   useEffect(() => {
     const fetchData = async () => {
       if (!params.id) return
 
+      // Track page view
+      track(ANALYTICS_EVENTS.PAGE_VIEW, {
+        page: 'Bet View',
+        betId: params.id,
+        user: user ? getUserProperties(user) : null,
+        timestamp: new Date().toISOString()
+      });
+
       const betData = await getBet(params.id as string)
       if (!betData) {
         setError('Aposta não encontrada')
+        track('Error Loading Bet', {
+          betId: params.id,
+          error: 'Bet not found',
+          user: user ? getUserProperties(user) : null,
+          timestamp: new Date().toISOString()
+        });
         return
       }
 
@@ -35,6 +52,15 @@ export default function BetPage() {
 
       const votesData = await getVotes(params.id as string)
       setVotes(votesData)
+
+      // Track successful data load
+      track('Bet Data Loaded', {
+        ...getBetProperties(betData),
+        votesCount: votesData.length,
+        isCreator: user?.email === betData.email_criador,
+        user: user ? getUserProperties(user) : null,
+        timestamp: new Date().toISOString()
+      });
     }
 
     fetchData()
@@ -45,13 +71,24 @@ export default function BetPage() {
     setIsLoading(true)
     setError('')
 
+    // Track vote submission attempt
+    track(ANALYTICS_EVENTS.BET_VOTE_SUBMIT, {
+      betId: bet?.id,
+      betTitle: bet?.titulo,
+      voterName,
+      selectedOption,
+      formInteractions,
+      user: user ? getUserProperties(user) : null,
+      timestamp: new Date().toISOString()
+    });
+
     try {
       if (!bet) return
       if (!voterName || !selectedOption) {
         throw new Error('Por favor, preencha seu nome e selecione uma opção')
       }
 
-      await addVote({
+      const vote = await addVote({
         aposta_id: bet.id,
         nome_apostador: voterName,
         opcao_escolhida: selectedOption,
@@ -61,14 +98,38 @@ export default function BetPage() {
       const votesData = await getVotes(bet.id)
       setVotes(votesData)
       
+      // Track successful vote
+      track(ANALYTICS_EVENTS.BET_VOTE_SUCCESS, {
+        ...getBetProperties(bet),
+        ...getVoteProperties(vote),
+        formInteractions,
+        user: user ? getUserProperties(user) : null,
+        timestamp: new Date().toISOString()
+      });
+      
       // Clear form
       setVoterName('')
       setSelectedOption('')
+      setFormInteractions(0)
       
       alert('Aposta registrada com sucesso!')
     } catch (error) {
       console.error('Error adding vote:', error)
       setError(error instanceof Error ? error.message : 'Erro ao registrar aposta')
+
+      // Track error
+      track(ANALYTICS_EVENTS.BET_VOTE_ERROR, {
+        betId: bet?.id,
+        betTitle: bet?.titulo,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        formData: {
+          voterName,
+          selectedOption,
+          formInteractions
+        },
+        user: user ? getUserProperties(user) : null,
+        timestamp: new Date().toISOString()
+      });
     } finally {
       setIsLoading(false)
     }
@@ -77,23 +138,62 @@ export default function BetPage() {
   const handleFinalizeBet = async () => {
     if (!bet || !finalResult) return
 
+    // Track finalize attempt
+    track(ANALYTICS_EVENTS.BET_FINALIZE_SUBMIT, {
+      ...getBetProperties(bet),
+      finalResult,
+      user: user ? getUserProperties(user) : null,
+      timestamp: new Date().toISOString()
+    });
+
     try {
-      await updateBet({
+      const updatedBet = await updateBet({
         ...bet,
         resultado_final: finalResult,
       })
 
       // Refresh bet data
-      const updatedBet = await getBet(bet.id)
-      if (updatedBet) {
-        setBet(updatedBet)
+      const refreshedBet = await getBet(bet.id)
+      if (refreshedBet) {
+        setBet(refreshedBet)
       }
+
+      // Track successful finalization
+      track(ANALYTICS_EVENTS.BET_FINALIZE_SUCCESS, {
+        ...getBetProperties(updatedBet),
+        finalResult,
+        user: user ? getUserProperties(user) : null,
+        timestamp: new Date().toISOString()
+      });
 
       alert('Aposta finalizada com sucesso!')
     } catch (error) {
       console.error('Error finalizing bet:', error)
       setError('Erro ao finalizar aposta')
+
+      // Track error
+      track(ANALYTICS_EVENTS.BET_FINALIZE_ERROR, {
+        ...getBetProperties(bet),
+        finalResult,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        user: user ? getUserProperties(user) : null,
+        timestamp: new Date().toISOString()
+      });
     }
+  }
+
+  // Track form field changes
+  const trackFieldChange = (field: string, value: string) => {
+    setFormInteractions(prev => prev + 1)
+    track(ANALYTICS_EVENTS.BET_VOTE_START, {
+      betId: bet?.id,
+      betTitle: bet?.titulo,
+      field,
+      valueLength: value.length,
+      formInteractions: formInteractions + 1,
+      user: user ? getUserProperties(user) : null,
+      timestamp: new Date().toISOString()
+    });
   }
 
   if (!bet) {
@@ -118,12 +218,40 @@ export default function BetPage() {
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <button
-            onClick={() => router.push('/')}
+            onClick={() => {
+              track('Back Button Clicked', {
+                pageFrom: 'Bet View',
+                pageTo: 'Home',
+                betId: bet.id,
+                user: user ? getUserProperties(user) : null,
+                timestamp: new Date().toISOString()
+              });
+              router.push('/')
+            }}
             className="text-white hover:text-purple-200 transition-colors"
           >
             ← Voltar
           </button>
-          <ShareButton url={betUrl} title={bet.titulo} />
+          <ShareButton 
+            url={betUrl} 
+            title={bet.titulo}
+            onClick={() => {
+              track(ANALYTICS_EVENTS.BET_SHARE_CLICK, {
+                ...getBetProperties(bet),
+                shareUrl: betUrl,
+                user: user ? getUserProperties(user) : null,
+                timestamp: new Date().toISOString()
+              });
+            }}
+            onSuccess={() => {
+              track(ANALYTICS_EVENTS.BET_SHARE_SUCCESS, {
+                ...getBetProperties(bet),
+                shareUrl: betUrl,
+                user: user ? getUserProperties(user) : null,
+                timestamp: new Date().toISOString()
+              });
+            }}
+          />
         </div>
 
         <h1 className="text-3xl font-bold mb-6 text-center">{bet.titulo}</h1>
@@ -215,47 +343,46 @@ export default function BetPage() {
           {!isCreator && !bet.resultado_final && (
             <form onSubmit={handleVote} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Seu Nome *
-                </label>
+                <label className="block text-sm font-medium mb-2">Seu Nome *</label>
                 <input
                   type="text"
                   value={voterName}
-                  onChange={(e) => setVoterName(e.target.value)}
+                  onChange={(e) => {
+                    setVoterName(e.target.value)
+                    trackFieldChange('voterName', e.target.value)
+                  }}
                   className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-purple-300"
+                  placeholder="Como você quer ser identificado"
                   required
-                  placeholder="Digite seu nome"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Sua Aposta *
-                </label>
-                <div className="grid grid-cols-2 gap-2">
+                <label className="block text-sm font-medium mb-2">Sua Escolha *</label>
+                <select
+                  value={selectedOption}
+                  onChange={(e) => {
+                    setSelectedOption(e.target.value)
+                    trackFieldChange('selectedOption', e.target.value)
+                  }}
+                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+                  required
+                >
+                  <option value="">Selecione uma opção</option>
                   {bet.opcoes.map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setSelectedOption(option)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        selectedOption === option
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-white/10 text-white hover:bg-white/20'
-                      }`}
-                    >
+                    <option key={option} value={option}>
                       {option}
-                    </button>
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
 
               <button
                 type="submit"
-                disabled={isLoading || !selectedOption}
+                disabled={isLoading}
                 className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:bg-purple-900/50"
               >
-                {isLoading ? 'Registrando...' : 'Fazer Aposta'}
+                {isLoading ? 'Registrando...' : 'Registrar Aposta'}
               </button>
             </form>
           )}

@@ -7,6 +7,8 @@ import { Bet } from '@/types/bet'
 import { AuthButton } from '@/components/auth-button'
 import { ShareButton } from '@/components/share-button'
 import { useSupabase } from '@/providers/supabase-provider'
+import { track } from '@/lib/amplitude'
+import { ANALYTICS_EVENTS, getBetProperties, getUserProperties } from '@/lib/analytics'
 
 export default function Home() {
   const router = useRouter()
@@ -16,13 +18,34 @@ export default function Home() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    // Track page view with user context
+    track(ANALYTICS_EVENTS.PAGE_VIEW, {
+      page: 'Home',
+      user: user ? getUserProperties(user) : null,
+      timestamp: new Date().toISOString()
+    });
+    
     const fetchBets = async () => {
       try {
         const data = await getAllBets(user?.email)
         setBets(data)
+        
+        // Track successful data fetch with bet statistics
+        track('Bets Loaded', { 
+          totalBets: data.length,
+          openBets: data.filter(bet => !bet.resultado_final).length,
+          closedBets: data.filter(bet => bet.resultado_final).length,
+          user: user ? getUserProperties(user) : null,
+          timestamp: new Date().toISOString()
+        });
       } catch (error) {
         console.error('Error fetching bets:', error)
         setError('Erro ao carregar as apostas')
+        track('Error Loading Bets', { 
+          error: error instanceof Error ? error.message : 'Unknown error',
+          user: user ? getUserProperties(user) : null,
+          timestamp: new Date().toISOString()
+        });
       } finally {
         setIsLoading(false)
       }
@@ -62,7 +85,14 @@ export default function Home() {
               <div
                 key={bet.id}
                 className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl shadow-xl hover:bg-white/20 transition-colors cursor-pointer"
-                onClick={() => router.push(`/bet/${bet.id}`)}
+                onClick={() => {
+                  track(ANALYTICS_EVENTS.BET_VIEW, {
+                    ...getBetProperties(bet),
+                    user: user ? getUserProperties(user) : null,
+                    timestamp: new Date().toISOString()
+                  });
+                  router.push(`/bet/${bet.id}`)
+                }}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -100,7 +130,13 @@ export default function Home() {
 
         <div className="mt-8 text-center">
           <button
-            onClick={() => router.push('/create')}
+            onClick={() => {
+              track(ANALYTICS_EVENTS.BET_CREATION_START, {
+                user: user ? getUserProperties(user) : null,
+                timestamp: new Date().toISOString()
+              });
+              router.push('/create')
+            }}
             className={`px-6 py-3 rounded-lg font-medium transition-colors ${
               user
                 ? 'bg-purple-600 text-white hover:bg-purple-700'

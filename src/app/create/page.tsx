@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { addBet } from '@/lib/storage'
 import { useSupabase } from '@/providers/supabase-provider'
+import { track } from '@/lib/amplitude'
+import { ANALYTICS_EVENTS, getUserProperties } from '@/lib/analytics'
 
 export default function CreateBetPage() {
   const router = useRouter()
@@ -14,9 +16,18 @@ export default function CreateBetPage() {
   const [betValue, setBetValue] = useState('')
   const [endDate, setEndDate] = useState('')
   const [options, setOptions] = useState<string[]>(['', ''])
+  const [visibility, setVisibility] = useState<'public' | 'private'>('public')
   const [error, setError] = useState('')
+  const [formInteractions, setFormInteractions] = useState(0)
 
   useEffect(() => {
+    // Track page view
+    track(ANALYTICS_EVENTS.PAGE_VIEW, {
+      page: 'Create Bet',
+      user: user ? getUserProperties(user) : null,
+      timestamp: new Date().toISOString()
+    });
+
     if (!isLoading && !user) {
       router.push('/')
     }
@@ -26,16 +37,19 @@ export default function CreateBetPage() {
     const newOptions = [...options]
     newOptions[index] = value
     setOptions(newOptions)
+    setFormInteractions(prev => prev + 1)
   }
 
   const addOption = () => {
     setOptions([...options, ''])
+    setFormInteractions(prev => prev + 1)
   }
 
   const removeOption = (index: number) => {
     if (options.length > 2) {
       const newOptions = options.filter((_, i) => i !== index)
       setOptions(newOptions)
+      setFormInteractions(prev => prev + 1)
     }
   }
 
@@ -43,48 +57,91 @@ export default function CreateBetPage() {
     e.preventDefault()
     setError('')
 
+    // Track form submission attempt
+    track(ANALYTICS_EVENTS.BET_CREATION_SUBMIT, {
+      user: user ? getUserProperties(user) : null,
+      formData: {
+        title,
+        description,
+        creatorName,
+        betValue,
+        endDate,
+        optionsCount: options.length,
+        visibility,
+        formInteractions
+      },
+      timestamp: new Date().toISOString()
+    });
+
     try {
       if (!user) {
-        throw new Error('Você precisa estar logado para criar uma aposta')
+        throw new Error('Usuário não está logado')
       }
 
-      // Validate form
-      if (!title || !creatorName || !endDate || options.some(opt => !opt)) {
-        throw new Error('Por favor, preencha todos os campos obrigatórios')
+      if (!user?.email) {
+        throw new Error('Email do usuário não encontrado')
       }
 
-      // Validate options
-      if (options.length < 2) {
-        throw new Error('Você precisa adicionar pelo menos 2 opções')
-      }
-
-      // Filter out empty options and trim whitespace
-      const validOptions = options
-        .map(opt => opt.trim())
-        .filter(opt => opt.length > 0)
-
-      // Create bet
-      const bet = await addBet({
+      const betData = {
         titulo: title,
         descricao: description,
-        opcoes: validOptions,
+        nome_criador: creatorName,
         valor_aposta: betValue,
         data_encerramento: endDate,
-        nome_criador: creatorName,
-        email_criador: user.email || '',
-      })
+        opcoes: options.filter(opt => opt.trim() !== ''),
+        visibilidade: visibility,
+        email_criador: user.email,
+      }
 
-      // Show success message and copy link
-      const betUrl = `${window.location.origin}/bet/${bet.id}`
-      navigator.clipboard.writeText(betUrl)
-      alert('Aposta criada com sucesso! O link foi copiado para a área de transferência.')
-      
-      // Redirect to bet page
-      router.push(`/bet/${bet.id}`)
+      const newBet = await addBet(betData)
+
+      // Track successful bet creation
+      track(ANALYTICS_EVENTS.BET_CREATION_SUCCESS, {
+        user: getUserProperties(user),
+        betId: newBet.id,
+        betTitle: newBet.titulo,
+        betType: newBet.visibilidade,
+        optionsCount: newBet.opcoes.length,
+        betValue: newBet.valor_aposta,
+        endDate: newBet.data_encerramento,
+        formInteractions,
+        timestamp: new Date().toISOString()
+      });
+
+      router.push(`/bet/${newBet.id}`)
     } catch (error) {
       console.error('Error creating bet:', error)
       setError(error instanceof Error ? error.message : 'Erro ao criar aposta')
+
+      // Track error
+      track(ANALYTICS_EVENTS.BET_CREATION_ERROR, {
+        user: user ? getUserProperties(user) : null,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        formData: {
+          title,
+          description,
+          creatorName,
+          betValue,
+          endDate,
+          optionsCount: options.length,
+          visibility,
+          formInteractions
+        },
+        timestamp: new Date().toISOString()
+      });
     }
+  }
+
+  // Track form field changes
+  const trackFieldChange = (field: string, value: string) => {
+    setFormInteractions(prev => prev + 1)
+    track(ANALYTICS_EVENTS.BET_CREATION_FORM_FILL, {
+      user: user ? getUserProperties(user) : null,
+      field,
+      valueLength: value.length,
+      formInteractions: formInteractions + 1,
+      timestamp: new Date().toISOString()
+    });
   }
 
   if (!user) {
@@ -96,7 +153,15 @@ export default function CreateBetPage() {
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <button
-            onClick={() => router.push('/')}
+            onClick={() => {
+              track('Back Button Clicked', {
+                pageFrom: 'Create Bet',
+                pageTo: 'Home',
+                user: user ? getUserProperties(user) : null,
+                timestamp: new Date().toISOString()
+              });
+              router.push('/')
+            }}
             className="text-white hover:text-purple-200 transition-colors"
           >
             ← Voltar
@@ -114,13 +179,14 @@ export default function CreateBetPage() {
           <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl shadow-xl">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Título da Aposta *
-                </label>
+                <label className="block text-sm font-medium mb-2">Título da Aposta *</label>
                 <input
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => {
+                    setTitle(e.target.value)
+                    trackFieldChange('title', e.target.value)
+                  }}
                   className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-purple-300"
                   placeholder="Ex: Quem vai ganhar o jogo?"
                   required
@@ -128,25 +194,28 @@ export default function CreateBetPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Descrição (opcional)
-                </label>
+                <label className="block text-sm font-medium mb-2">Descrição</label>
                 <textarea
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-purple-300 min-h-[100px]"
-                  placeholder="Detalhes adicionais sobre a aposta..."
+                  onChange={(e) => {
+                    setDescription(e.target.value)
+                    trackFieldChange('description', e.target.value)
+                  }}
+                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-purple-300"
+                  placeholder="Descreva os detalhes da aposta..."
+                  rows={3}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Seu Nome *
-                </label>
+                <label className="block text-sm font-medium mb-2">Seu Nome *</label>
                 <input
                   type="text"
                   value={creatorName}
-                  onChange={(e) => setCreatorName(e.target.value)}
+                  onChange={(e) => {
+                    setCreatorName(e.target.value)
+                    trackFieldChange('creatorName', e.target.value)
+                  }}
                   className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-purple-300"
                   placeholder="Como você quer ser identificado"
                   required
@@ -154,30 +223,47 @@ export default function CreateBetPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Valor da Aposta *
-                </label>
+                <label className="block text-sm font-medium mb-2">Valor da Aposta *</label>
                 <input
                   type="text"
                   value={betValue}
-                  onChange={(e) => setBetValue(e.target.value)}
+                  onChange={(e) => {
+                    setBetValue(e.target.value)
+                    trackFieldChange('betValue', e.target.value)
+                  }}
                   className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-purple-300"
-                  placeholder="Ex: 10,00"
+                  placeholder="Ex: R$ 10,00"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-1">
-                  Data de Encerramento *
-                </label>
+                <label className="block text-sm font-medium mb-2">Data de Término *</label>
                 <input
                   type="datetime-local"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) => {
+                    setEndDate(e.target.value)
+                    trackFieldChange('endDate', e.target.value)
+                  }}
                   className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Visibilidade</label>
+                <select
+                  value={visibility}
+                  onChange={(e) => {
+                    setVisibility(e.target.value as 'public' | 'private')
+                    trackFieldChange('visibility', e.target.value)
+                  }}
+                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+                >
+                  <option value="public">Pública</option>
+                  <option value="private">Privada</option>
+                </select>
               </div>
             </div>
           </div>
