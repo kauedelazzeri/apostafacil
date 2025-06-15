@@ -7,6 +7,10 @@ export interface Bet {
   data_encerramento: string
   nome_criador: string
   email_criador: string
+  /**
+   * Define se esta aposta permite participantes não autenticados.
+   */
+  permitir_sem_login: boolean
   resultado_final?: string
   visibilidade: 'public' | 'private'
   created_at: string
