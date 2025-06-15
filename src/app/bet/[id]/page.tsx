@@ -24,6 +24,12 @@ export default function BetPage() {
   const [formInteractions, setFormInteractions] = useState(0)
 
   useEffect(() => {
+    if (user) {
+      setVoterName(user.email)
+    }
+  }, [user])
+
+  useEffect(() => {
     const fetchData = async () => {
       if (!params.id) return
 
@@ -108,7 +114,7 @@ export default function BetPage() {
       });
       
       // Clear form
-      setVoterName('')
+      setVoterName(user ? user.email : '')
       setSelectedOption('')
       setFormInteractions(0)
       
@@ -347,11 +353,14 @@ export default function BetPage() {
                 <input
                   type="text"
                   value={voterName}
+                  disabled={!!user}
                   onChange={(e) => {
-                    setVoterName(e.target.value)
-                    trackFieldChange('voterName', e.target.value)
+                    if (!user) {
+                      setVoterName(e.target.value)
+                      trackFieldChange('voterName', e.target.value)
+                    }
                   }}
-                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-purple-300"
+                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-purple-300 disabled:opacity-70"
                   placeholder="Como você quer ser identificado"
                   required
                 />
