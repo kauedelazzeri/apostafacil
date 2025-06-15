@@ -6,14 +6,16 @@ import { getBet, addVote, getVotes, updateBet } from '@/lib/storage'
 import { useSupabase } from '@/providers/supabase-provider'
 import { Bet, Vote } from '@/types/bet'
 import { ShareButton } from '@/components/share-button'
+import { AuthButton } from '@/components/auth-button'
 import { track } from '@/lib/amplitude'
 import { ANALYTICS_EVENTS, getBetProperties, getUserProperties, getVoteProperties } from '@/lib/analytics'
 
 export default function BetPage() {
   const params = useParams()
   const router = useRouter()
-  const { user } = useSupabase()
+  const { user, isLoading: isAuthLoading } = useSupabase()
   const [bet, setBet] = useState<Bet | null>(null)
+  const [isBetLoading, setIsBetLoading] = useState(true)
   const [votes, setVotes] = useState<Vote[]>([])
   const [voterName, setVoterName] = useState('')
   const [selectedOption, setSelectedOption] = useState('')
@@ -26,6 +28,8 @@ export default function BetPage() {
   useEffect(() => {
     const fetchData = async () => {
       if (!params.id) return
+
+      setIsBetLoading(true)
 
       // Track page view
       track(ANALYTICS_EVENTS.PAGE_VIEW, {
@@ -44,6 +48,7 @@ export default function BetPage() {
           user: user ? getUserProperties(user) : null,
           timestamp: new Date().toISOString()
         });
+        setIsBetLoading(false)
         return
       }
 
@@ -61,6 +66,7 @@ export default function BetPage() {
         user: user ? getUserProperties(user) : null,
         timestamp: new Date().toISOString()
       });
+      setIsBetLoading(false)
     }
 
     fetchData()
@@ -196,8 +202,31 @@ export default function BetPage() {
     });
   }
 
+  if (isAuthLoading || isBetLoading) {
+    return (
+      <div className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">
+        Carregando...
+      </div>
+    )
+  }
+
   if (!bet) {
-    return <div className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">Carregando...</div>
+    if (!user) {
+      return (
+        <div className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">
+          <div className="max-w-2xl mx-auto text-center space-y-4">
+            <p>Você precisa estar logado via Google para visualizar esta aposta.</p>
+            <AuthButton />
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">
+        {error || 'Aposta não encontrada ou você não tem permissão para visualizá-la.'}
+      </div>
+    )
   }
 
   // Calculate vote counts and winners
