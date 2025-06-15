@@ -139,6 +139,7 @@ src/
 - Este é um MVP e usa armazenamento em memória. Em produção, recomenda-se usar um banco de dados.
 - Não há autenticação ou pagamentos reais.
 - O criador da aposta é responsável por coletar e distribuir os valores.
+- Esta linha foi adicionada via **Codex do ChatGPT** para testar a integração da pipeline.
 
 ## Build
 
