@@ -242,8 +242,16 @@ export default function BetPage() {
   }, {} as Record<string, number>)
 
   // Calculate winners and prizes
-  const winners = bet.resultado_final ? votes.filter(vote => vote.opcao_escolhida === bet.resultado_final) : []
-  const totalValue = votes.length * (parseFloat(bet.valor_aposta.replace(/[^0-9,]/g, '').replace(',', '.')) || 0)
+  const winners = bet.resultado_final
+    ? votes.filter(vote => vote.opcao_escolhida === bet.resultado_final)
+    : []
+  const losers = bet.resultado_final
+    ? votes.filter(vote => vote.opcao_escolhida !== bet.resultado_final)
+    : []
+  const totalValue =
+    votes.length *
+      (parseFloat(bet.valor_aposta.replace(/[^0-9,]/g, '').replace(',', '.')) ||
+        0)
   const prizePerWinner = winners.length > 0 ? totalValue / winners.length : 0
 
   const betUrl = `${window.location.origin}/bet/${bet.id}`
@@ -462,9 +470,38 @@ export default function BetPage() {
                     <h3 className="text-lg font-medium mb-2 text-white">Ganhadores</h3>
                     <div className="space-y-2">
                       {winners.map((winner, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 bg-green-500/20 rounded-lg">
-                          <span className="font-medium text-white">{winner.nome_apostador}</span>
-                          <span className="text-sm text-green-200">(R$ {prizePerWinner.toFixed(2)})</span>
+                        <div
+                          key={index}
+                          className="flex items-center gap-2 p-2 bg-green-500/20 rounded-lg"
+                        >
+                          <span className="font-medium text-white">
+                            {winner.nome_apostador}
+                          </span>
+                          <span className="text-sm text-green-200">
+                            (apostou em {winner.opcao_escolhida} - R$
+                            {prizePerWinner.toFixed(2)})
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {losers.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium mb-2 text-white">Perdedores</h3>
+                    <div className="space-y-2">
+                      {losers.map((loser, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-2 p-2 bg-red-500/20 rounded-lg"
+                        >
+                          <span className="font-medium text-white">
+                            {loser.nome_apostador}
+                          </span>
+                          <span className="text-sm text-red-200">
+                            (apostou em {loser.opcao_escolhida})
+                          </span>
                         </div>
                       ))}
                     </div>
