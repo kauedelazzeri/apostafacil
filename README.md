@@ -55,6 +55,14 @@ Após criar a aposta, você terá acesso a:
 - Finalização de apostas com definição de ganhadores
 - Cálculo automático de valores para os ganhadores
 
+### Visibilidade das Apostas
+- **Pública**: aparecem para todos na página inicial.
+- **Privada**: ficam ocultas da listagem, mas qualquer pessoa com o link consegue acessar.
+
+### Permitir apostas sem login
+- **Sim**: qualquer visitante pode votar apenas informando o nome.
+- **Não**: somente usuários autenticados podem votar e o nome é preenchido automaticamente com o e‑mail do Google.
+
 ## 🛠️ Tecnologias
 
 - **Frontend**: Next.js 14, React, Tailwind CSS
@@ -139,6 +147,13 @@ src/
 - Este é um MVP que utiliza o Supabase para armazenar dados e realizar a autenticação.
 - Os pagamentos ainda não são processados automaticamente.
 - O criador da aposta é responsável por coletar e distribuir os valores.
+
+## Políticas do Supabase
+
+- Tabela `apostas`: habilite RLS e permita `SELECT` para todos. Dessa forma,
+  apostas privadas continuam acessíveis por link.
+- Tabela `apostas_feitas`: a política de `INSERT` deve permitir votos de
+  usuários autenticados ou quando `permitir_sem_login` estiver `true` na aposta.
 
 ## Build
 

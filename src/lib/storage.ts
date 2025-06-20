@@ -67,22 +67,11 @@ export const updateBet = async (updatedBet: Bet) => {
   return data
 }
 
-export const getAllBets = async (userEmail?: string | null) => {
-  console.log('Fetching bets for user:', userEmail) // Debug log
-
-  let query = supabase
+export const getAllBets = async () => {
+  const { data, error } = await supabase
     .from('apostas')
     .select('*')
-
-  if (!userEmail) {
-    console.log('No user email, filtering public bets only') // Debug log
-    query = query.eq('visibilidade', 'public')
-  } else {
-    console.log('User email found, including private bets') // Debug log
-    query = query.or(`and(visibilidade.eq.public),and(visibilidade.eq.private,email_criador.eq.${userEmail})`)
-  }
-
-  const { data, error } = await query
+    .eq('visibilidade', 'public')
     .order('created_at', { ascending: false })
 
   if (error) {
