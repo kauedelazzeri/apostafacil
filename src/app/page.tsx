@@ -27,7 +27,7 @@ export default function Home() {
     
     const fetchBets = async () => {
       try {
-        const data = await getAllBets(user?.email)
+        const data = await getAllBets()
         setBets(data)
         
         // Track successful data fetch with bet statistics
