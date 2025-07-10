@@ -241,6 +241,12 @@ export default function BetPage() {
     return acc
   }, {} as Record<string, number>)
 
+  // Calculate vote counts per person
+  const votesPerPerson = votes.reduce((acc, vote) => {
+    acc[vote.nome_apostador] = (acc[vote.nome_apostador] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
   // Calculate winners and prizes
   const winners = bet.resultado_final
     ? votes.filter(vote => vote.opcao_escolhida === bet.resultado_final)
@@ -354,8 +360,35 @@ export default function BetPage() {
               </div>
 
               {!bet.resultado_final && (
-                <div className="mt-4">
-                  <h3 className="text-lg font-medium mb-2 text-white">Finalizar Aposta</h3>
+                <>
+                  <div className="mt-4 space-y-2">
+                    <h3 className="text-lg font-medium mb-2 text-white">Votos por Apostador</h3>
+                    {Object.entries(votesPerPerson).map(([name, count]) => (
+                      <div key={name} className="flex items-center gap-2">
+                        <span className="font-medium text-white">{name}:</span>
+                        <span className="text-purple-200">
+                          {count} voto{count !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4">
+                    <h3 className="text-lg font-medium mb-2 text-white">Lista de Votos</h3>
+                    <div className="space-y-1">
+                      {votes.map((vote, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <span className="font-medium text-white">{vote.nome_apostador}</span>
+                          <span className="text-sm text-purple-200">
+                            (votou em {vote.opcao_escolhida})
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <h3 className="text-lg font-medium mb-2 text-white">Finalizar Aposta</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {bet.opcoes.map((option) => (
                       <button
@@ -378,7 +411,8 @@ export default function BetPage() {
                   >
                     Finalizar Aposta
                   </button>
-                </div>
+                  </div>
+                </>
               )}
             </div>
           )}
