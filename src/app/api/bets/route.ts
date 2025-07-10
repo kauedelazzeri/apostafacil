@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { Bet } from '@/types/bet'
 import { addBet, getAllBets } from '@/lib/storage'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 
 // Disable caching for this route
 export const dynamic = 'force-dynamic'
@@ -54,29 +52,8 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    // Get the user's session from cookies
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
-    
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    if (sessionError) {
-      console.error('Session error:', sessionError)
-      // If there's a session error, treat as not logged in
-      const publicBets = await getAllBets(null)
-      return NextResponse.json(publicBets, {
-        headers: {
-          'Cache-Control': 'no-store, must-revalidate',
-          'Pragma': 'no-cache',
-        },
-      })
-    }
+    const bets = await getAllBets()
 
-    console.log('Session user:', session?.user?.email) // Debug log
-    
-    // Get bets using the user's email (if logged in)
-    const bets = await getAllBets(session?.user?.email)
-    
     return NextResponse.json(bets, {
       headers: {
         'Cache-Control': 'no-store, must-revalidate',
@@ -85,13 +62,11 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('Error in GET /api/bets:', error)
-    // In case of error, return only public bets
-    const publicBets = await getAllBets(null)
-    return NextResponse.json(publicBets, {
+    return NextResponse.json([], {
       headers: {
         'Cache-Control': 'no-store, must-revalidate',
         'Pragma': 'no-cache',
       },
     })
   }
-} 
+}
