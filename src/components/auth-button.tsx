@@ -36,8 +36,8 @@ export function AuthButton() {
 
   if (user) {
     return (
-      <div className="flex items-center gap-4">
-        <span className="text-sm text-white">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+        <span className="text-sm text-white break-all">
           Olá, {user.email}
         </span>
         <button
