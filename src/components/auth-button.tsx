@@ -7,9 +7,13 @@ export function AuthButton() {
   const { user, isLoading } = useSupabase()
 
   const handleSignIn = async () => {
-    const redirectUrl = window.location.origin.includes('localhost')
+    // Determine the correct redirect URL based on the environment
+    const isLocalhost = window.location.hostname === 'localhost'
+    const redirectUrl = isLocalhost 
       ? `${window.location.origin}/auth/callback`
-      : `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/callback`
+      : `${window.location.origin}/auth/callback`
+
+    console.log('Signing in with redirect URL:', redirectUrl) // Debug log
 
     await supabase.auth.signInWithOAuth({
       provider: 'google',
