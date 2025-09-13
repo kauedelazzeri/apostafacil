@@ -14,6 +14,7 @@ export interface Bet {
   resultado_final?: string
   visibilidade: 'public' | 'private'
   created_at: string
+  deleted_at?: string
 }
 
 export interface Vote {

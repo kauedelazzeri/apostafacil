@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { getBet, addVote, getVotes, finalizeBet } from '@/lib/storage'
+import { getBet, addVote, getVotes, finalizeBet, deleteBet } from '@/lib/storage'
 import { useSupabase } from '@/providers/supabase-provider'
 import { Bet, Vote } from '@/types/bet'
 import { ShareButton } from '@/components/share-button'
@@ -19,6 +19,7 @@ export default function BetPage() {
   const [selectedOption, setSelectedOption] = useState('')
   const [finalResult, setFinalResult] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState('')
   const [isCreator, setIsCreator] = useState(false)
   const [formInteractions, setFormInteractions] = useState(0)
@@ -179,6 +180,50 @@ export default function BetPage() {
     }
   }
 
+  const handleDeleteBet = async () => {
+    if (!bet) return
+
+    const confirmDelete = window.confirm('Tem certeza que deseja deletar esta aposta? Esta ação não pode ser desfeita.')
+    if (!confirmDelete) return
+
+    setIsDeleting(true)
+    setError('')
+
+    // Track delete attempt
+    track('Bet Delete Submit', {
+      ...getBetProperties(bet),
+      user: user ? getUserProperties(user) : null,
+      timestamp: new Date().toISOString()
+    });
+
+    try {
+      await deleteBet(bet.id)
+
+      // Track successful deletion
+      track('Bet Delete Success', {
+        ...getBetProperties(bet),
+        user: user ? getUserProperties(user) : null,
+        timestamp: new Date().toISOString()
+      });
+
+      // Redirect to home page
+      router.push('/')
+    } catch (error) {
+      console.error('Error deleting bet:', error)
+      setError('Erro ao deletar aposta')
+
+      // Track error
+      track('Bet Delete Error', {
+        ...getBetProperties(bet),
+        error: error instanceof Error ? error.message : 'Unknown error',
+        user: user ? getUserProperties(user) : null,
+        timestamp: new Date().toISOString()
+      });
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   // Track form field changes
   const trackFieldChange = (field: string, value: string) => {
     setFormInteractions(prev => prev + 1)
@@ -195,6 +240,36 @@ export default function BetPage() {
 
   if (!bet) {
     return <div className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">Carregando...</div>
+  }
+
+  // Check if bet is deleted
+  if (bet.deleted_at) {
+    return (
+      <main className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-red-500/50">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-red-400 mb-4">Aposta Deletada</h1>
+              <p className="text-gray-300 mb-6">
+                Esta aposta foi removida pelo criador em {new Date(bet.deleted_at).toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}.
+              </p>
+              <button
+                onClick={() => router.push('/')}
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Voltar para Apostas
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
   }
 
   // Calculate vote counts and winners
@@ -334,6 +409,17 @@ export default function BetPage() {
                   </button>
                 </div>
               )}
+
+              {/* Delete button - always visible for creator */}
+              <div className="mt-4">
+                <button
+                  onClick={handleDeleteBet}
+                  disabled={isDeleting}
+                  className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-900/50 transition-colors"
+                >
+                  {isDeleting ? 'Deletando...' : 'Deletar Aposta'}
+                </button>
+              </div>
             </div>
           )}
 

@@ -102,40 +102,122 @@ export const updateBet = async (updatedBet: Bet) => {
 
 // Specific function for finalizing bets (updating only resultado_final)
 export const finalizeBet = async (betId: string, resultado_final: string) => {
-  console.log('Finalizing bet:', betId, 'with result:', resultado_final)
+  try {
+    // Get current user session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
-  const { data, error } = await supabase
-    .from('apostas')
-    .update({ resultado_final })
-    .eq('id', betId)
+    if (!session?.user?.email) {
+      throw new Error('Usuário não autenticado')
+    }
 
-  if (error) {
-    console.error('Error finalizing bet:', error)
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint
-    })
+    // First, verify the bet exists and user permissions
+    const { data: currentBet, error: fetchError } = await supabase
+      .from('apostas')
+      .select('*')
+      .eq('id', betId)
+      .single()
+
+    if (fetchError || !currentBet) {
+      throw new Error(`Aposta não encontrada: ${betId}`)
+    }
+
+    // Check if user is the creator
+    if (session.user.email !== currentBet.email_criador) {
+      throw new Error('Apenas o criador da aposta pode finalizá-la')
+    }
+
+    // Check if bet is already finalized
+    if (currentBet.resultado_final) {
+      throw new Error('Esta aposta já foi finalizada')
+    }
+
+    // Use RPC function for the update
+    const { data: rpcResult, error: rpcError } = await supabase
+      .rpc('finalize_bet', {
+        bet_id: betId,
+        final_result: resultado_final,
+        user_email: session.user.email
+      })
+
+    if (rpcError) {
+      // Fallback to direct update
+      const { error: updateError } = await supabase
+        .from('apostas')
+        .update({ resultado_final })
+        .eq('id', betId)
+        .eq('email_criador', session.user.email)
+
+      if (updateError) {
+        throw new Error(`Erro ao atualizar aposta: ${updateError.message}`)
+      }
+    }
+
+    // Fetch the updated data
+    const { data: afterUpdateBet, error: afterUpdateError } = await supabase
+      .from('apostas')
+      .select('*')
+      .eq('id', betId)
+      .single()
+
+    if (afterUpdateError || !afterUpdateBet) {
+      throw new Error('Erro ao verificar atualização')
+    }
+
+    // Check if the update actually worked
+    if (afterUpdateBet.resultado_final !== resultado_final) {
+      throw new Error('A atualização não foi persistida no banco de dados')
+    }
+
+    return afterUpdateBet
+
+  } catch (error) {
     throw error
   }
+}
 
-  console.log('Bet finalized successfully')
-  
-  // Fetch the updated data separately to avoid 406 error
-  const { data: updatedBet, error: fetchError } = await supabase
-    .from('apostas')
-    .select('*')
-    .eq('id', betId)
-    .single()
-    
-  if (fetchError) {
-    console.error('Error fetching updated bet:', fetchError)
-    // Don't throw here, the update was successful
-    return null
+// Specific function for soft deleting bets
+export const deleteBet = async (betId: string) => {
+  try {
+    // Get current user session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (!session?.user?.email) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    // First, verify the bet exists and user permissions
+    const { data: currentBet, error: fetchError } = await supabase
+      .from('apostas')
+      .select('*')
+      .eq('id', betId)
+      .is('deleted_at', null)
+      .single()
+
+    if (fetchError || !currentBet) {
+      throw new Error('Aposta não encontrada')
+    }
+
+    // Check if user is the creator
+    if (session.user.email !== currentBet.email_criador) {
+      throw new Error('Apenas o criador da aposta pode deletá-la')
+    }
+
+    // Use RPC function for the soft delete
+    const { data: rpcResult, error: rpcError } = await supabase
+      .rpc('delete_bet', {
+        bet_id: betId,
+        user_email: session.user.email
+      })
+
+    if (rpcError) {
+      throw new Error(`Erro ao deletar aposta: ${rpcError.message}`)
+    }
+
+    return rpcResult
+
+  } catch (error) {
+    throw error
   }
-  
-  return updatedBet
 }
 
 export const getAllBets = async (userEmail?: string | null) => {
@@ -144,6 +226,7 @@ export const getAllBets = async (userEmail?: string | null) => {
   let query = supabase
     .from('apostas')
     .select('*')
+    .is('deleted_at', null) // Filter out deleted bets
 
   if (!userEmail) {
     console.log('No user email, filtering public bets only') // Debug log
