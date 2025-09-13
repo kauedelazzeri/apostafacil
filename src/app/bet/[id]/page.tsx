@@ -335,7 +335,8 @@ export default function BetPage() {
         )}
 
         <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl shadow-xl mb-6">
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          {/* Grid responsivo para mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div>
               <p className="text-sm text-purple-200">Criado por</p>
               <p className="font-medium text-white">{bet.nome_criador}</p>
@@ -346,19 +347,18 @@ export default function BetPage() {
             </div>
             <div>
               <p className="text-sm text-purple-200">Encerra em</p>
-              <div className="flex items-center gap-2">
-                <span className="text-purple-300">Data de Encerramento:</span>
-                <span className="font-medium">
-                  {new Date(bet.data_encerramento).toLocaleString('pt-BR', {
-                    timeZone: 'America/Sao_Paulo',
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </span>
-              </div>
+              <p className="font-medium text-white">
+                {new Date(bet.data_encerramento).toLocaleDateString('pt-BR', {
+                  timeZone: 'America/Sao_Paulo',
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                })} às {new Date(bet.data_encerramento).toLocaleTimeString('pt-BR', {
+                  timeZone: 'America/Sao_Paulo',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
             </div>
             <div>
               <p className="text-sm text-purple-200">Total de apostas</p>

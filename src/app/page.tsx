@@ -65,9 +65,12 @@ export default function Home() {
   return (
     <main className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Apostas</h1>
-          <div className="flex items-center gap-4">
+        {/* Header - reorganizado para mobile */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-4">Apostas</h1>
+          
+          {/* Botões reorganizados para mobile */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               onClick={() => {
                 track(ANALYTICS_EVENTS.BET_CREATION_START, {
@@ -76,7 +79,7 @@ export default function Home() {
                 })
                 router.push('/create')
               }}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+              className={`px-4 py-2 text-sm sm:text-base rounded-lg font-medium transition-colors ${
                 user
                   ? 'bg-purple-600 text-white hover:bg-purple-700'
                   : 'bg-gray-600 text-gray-300 cursor-not-allowed'
@@ -85,7 +88,15 @@ export default function Home() {
             >
               {user ? 'Criar Nova Aposta' : 'Logue para criar'}
             </button>
-            <AuthButton />
+            
+            <div className="flex items-center gap-2">
+              <AuthButton />
+              {user && (
+                <span className="text-sm text-purple-200 truncate">
+                  Olá, {user.email}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
