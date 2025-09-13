@@ -8,6 +8,7 @@ import { Bet, Vote } from '@/types/bet'
 import { ShareButton } from '@/components/share-button'
 import { track } from '@/lib/posthog'
 import { ANALYTICS_EVENTS, getBetProperties, getUserProperties, getVoteProperties } from '@/lib/analytics'
+import Head from 'next/head'
 
 export default function BetPage() {
   const params = useParams()
@@ -50,6 +51,42 @@ export default function BetPage() {
 
       setBet(betData)
       setIsCreator(user?.email === betData.email_criador)
+
+      // Update page metadata dynamically
+      if (typeof window !== 'undefined') {
+        document.title = `${betData.titulo} - Aposta Fácil`
+        
+        // Update Open Graph meta tags
+        const updateMetaTag = (property: string, content: string) => {
+          let element = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement
+          if (!element) {
+            element = document.createElement('meta')
+            element.setAttribute('property', property)
+            document.head.appendChild(element)
+          }
+          element.setAttribute('content', content)
+        }
+
+        updateMetaTag('og:title', betData.titulo)
+        updateMetaTag('og:description', betData.descricao || `Aposta: ${betData.titulo}. Valor: R$ ${betData.valor_aposta}`)
+        updateMetaTag('og:image', `${window.location.origin}/images/caesjogandopoker.png`)
+        updateMetaTag('og:url', window.location.href)
+        
+        // Twitter meta tags
+        const updateTwitterTag = (name: string, content: string) => {
+          let element = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement
+          if (!element) {
+            element = document.createElement('meta')
+            element.setAttribute('name', name)
+            document.head.appendChild(element)
+          }
+          element.setAttribute('content', content)
+        }
+
+        updateTwitterTag('twitter:title', betData.titulo)
+        updateTwitterTag('twitter:description', betData.descricao || `Aposta: ${betData.titulo}. Valor: R$ ${betData.valor_aposta}`)
+        updateTwitterTag('twitter:image', `${window.location.origin}/images/caesjogandopoker.png`)
+      }
 
       const votesData = await getVotes(params.id as string)
       setVotes(votesData)

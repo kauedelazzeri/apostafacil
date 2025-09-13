@@ -9,6 +9,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Aposta Fácil - Crie e participe de apostas online",
   description: "Plataforma para criar e participar de apostas online de forma simples e divertida",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   openGraph: {
     title: "Aposta Fácil",
     description: "Crie e participe de apostas online de forma simples e divertida",
@@ -17,10 +18,10 @@ export const metadata: Metadata = {
     siteName: "Aposta Fácil",
     images: [
       {
-        url: "/og-image.png",
+        url: "/images/caesjogandopoker.png",
         width: 1200,
         height: 630,
-        alt: "Aposta Fácil",
+        alt: "Aposta Fácil - Cães jogando poker",
       },
     ],
   },
@@ -28,11 +29,16 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Aposta Fácil",
     description: "Crie e participe de apostas online de forma simples e divertida",
-    images: ["/og-image.png"],
+    images: ["/images/caesjogandopoker.png"],
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/images/caesjogandopoker.png', type: 'image/png' }
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/images/caesjogandopoker.png',
   },
 };
 
