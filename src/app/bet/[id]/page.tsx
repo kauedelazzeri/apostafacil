@@ -6,6 +6,7 @@ import { getBet, addVote, getVotes, finalizeBet, deleteBet } from '@/lib/storage
 import { useSupabase } from '@/providers/supabase-provider'
 import { Bet, Vote } from '@/types/bet'
 import { ShareButton } from '@/components/share-button'
+import { AuthButton } from '@/components/auth-button'
 import { track } from '@/lib/posthog'
 import { ANALYTICS_EVENTS, getBetProperties, getUserProperties, getVoteProperties } from '@/lib/analytics'
 import Head from 'next/head'
@@ -26,6 +27,18 @@ export default function BetPage() {
   const [formInteractions, setFormInteractions] = useState(0)
 
   useEffect(() => {
+    // Check if user is trying to access Supabase API directly
+    if (typeof window !== 'undefined' && window.location.href.includes('supabase.co/rest/v1')) {
+      // Extract bet ID from Supabase URL pattern
+      const urlMatch = window.location.href.match(/id=eq\.([a-f0-9-]+)/);
+      if (urlMatch) {
+        const betId = urlMatch[1];
+        // Redirect to correct application URL
+        window.location.href = `${window.location.origin}/bet/${betId}`;
+        return;
+      }
+    }
+
     const fetchData = async () => {
       if (!params.id) return
 
@@ -37,12 +50,12 @@ export default function BetPage() {
         timestamp: new Date().toISOString()
       });
 
-      const betData = await getBet(params.id as string)
+      const betData = await getBet(params.id as string, user?.email)
       if (!betData) {
-        setError('Aposta não encontrada')
+        setError('Aposta não encontrada ou você não tem permissão para visualizá-la')
         track('Error Loading Bet', {
           betId: params.id,
-          error: 'Bet not found',
+          error: 'Bet not found or access denied',
           user: user ? getUserProperties(user) : null,
           timestamp: new Date().toISOString()
         });
@@ -188,7 +201,7 @@ export default function BetPage() {
       const updatedBet = await finalizeBet(bet.id, finalResult)
 
       // Refresh bet data
-      const refreshedBet = await getBet(bet.id)
+      const refreshedBet = await getBet(bet.id, user?.email)
       if (refreshedBet) {
         setBet(refreshedBet)
       }
@@ -309,6 +322,36 @@ export default function BetPage() {
     )
   }
 
+  // Check if bet is private and user is not logged in
+  if (bet.visibilidade === 'private' && !user) {
+    return (
+      <main className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-yellow-500/50">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-yellow-400 mb-4">🔒 Aposta Privada</h1>
+              <p className="text-gray-300 mb-6">
+                Esta é uma aposta privada. Você precisa fazer login para visualizá-la.
+              </p>
+              <div className="space-y-4">
+                <AuthButton />
+                <button
+                  onClick={() => router.push('/')}
+                  className="w-full px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Voltar para Apostas Públicas
+                </button>
+              </div>
+              <p className="text-sm text-purple-300 mt-4">
+                Após fazer login, você será redirecionado de volta para esta aposta.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   // Calculate vote counts and winners
   const voteCounts = bet.opcoes.reduce((acc, option) => {
     acc[option] = votes.filter(vote => vote.opcao_escolhida === option).length
@@ -320,7 +363,7 @@ export default function BetPage() {
   const totalValue = votes.length * (parseFloat(bet.valor_aposta.replace(/[^0-9,]/g, '').replace(',', '.')) || 0)
   const prizePerWinner = winners.length > 0 ? totalValue / winners.length : 0
 
-  const betUrl = `${window.location.origin}/bet/${bet.id}`
+  const betUrl = `${typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/bet/${bet.id}`
 
   return (
     <main className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-purple-900 to-purple-800 text-white">

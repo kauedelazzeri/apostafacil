@@ -1,15 +1,28 @@
 import { Bet, Vote } from '@/types/bet'
 import { supabase } from './supabase'
 
-export const getBet = async (id: string) => {
+export const getBet = async (id: string, userEmail?: string | null) => {
+  // For direct access (via link), allow viewing private bets
+  // But require login to see full content
   const { data, error } = await supabase
     .from('apostas')
     .select('*')
     .eq('id', id)
+    .is('deleted_at', null) // Don't return deleted bets
     .single()
 
   if (error) {
     console.error('Error fetching bet:', error)
+    // Log specific error details for debugging
+    if (error.code === 'PGRST116') {
+      console.error('Bet not found (404)')
+    } else if (error.code === 'PGRST301') {
+      console.error('Access denied (RLS policy violation)')
+    } else if (error.code === 'PGRST406') {
+      console.error('Not Acceptable (406) - likely content type issue')
+    } else {
+      console.error('Other error:', error.code, error.message)
+    }
     return null
   }
 

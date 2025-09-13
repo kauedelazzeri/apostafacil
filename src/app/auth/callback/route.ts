@@ -42,8 +42,9 @@ export async function GET(request: Request) {
     }
   }
 
-  const redirectUrl = requestUrl.origin
-  console.log('Redirecting to:', redirectUrl)
+  // Redirect to a special page that will handle the client-side redirect
+  const redirectUrl = new URL('/auth/redirect', requestUrl.origin)
+  console.log('Redirecting to:', redirectUrl.toString())
 
-  return NextResponse.redirect(new URL('/', redirectUrl))
+  return NextResponse.redirect(redirectUrl)
 } 

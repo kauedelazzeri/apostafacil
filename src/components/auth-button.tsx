@@ -7,6 +7,11 @@ export function AuthButton() {
   const { user, isLoading } = useSupabase()
 
   const handleSignIn = async () => {
+    // Store current URL in sessionStorage for redirect after login
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('returnToUrl', window.location.pathname)
+    }
+
     // Determine the correct redirect URL based on the environment
     const isLocalhost = window.location.hostname === 'localhost'
     const redirectUrl = isLocalhost 

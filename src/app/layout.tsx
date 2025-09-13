@@ -33,11 +33,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
       { url: '/icon.svg', type: 'image/svg+xml' },
       { url: '/images/caesjogandopoker.png', type: 'image/png' }
     ],
-    shortcut: '/favicon.ico',
+    shortcut: '/icon.svg',
     apple: '/images/caesjogandopoker.png',
   },
 };
