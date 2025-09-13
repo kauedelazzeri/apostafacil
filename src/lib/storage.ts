@@ -52,18 +52,66 @@ export const addBet = async (bet: Omit<Bet, 'id' | 'created_at'>) => {
 }
 
 export const updateBet = async (updatedBet: Bet) => {
+  // Only update specific fields to avoid conflicts
+  const updateData = {
+    titulo: updatedBet.titulo,
+    descricao: updatedBet.descricao,
+    opcoes: updatedBet.opcoes,
+    valor_aposta: updatedBet.valor_aposta,
+    data_encerramento: updatedBet.data_encerramento,
+    nome_criador: updatedBet.nome_criador,
+    resultado_final: updatedBet.resultado_final,
+    visibilidade: updatedBet.visibilidade,
+    permitir_sem_login: updatedBet.permitir_sem_login
+  }
+
+  console.log('Updating bet with data:', updateData) // Debug log
+
   const { data, error } = await supabase
     .from('apostas')
-    .update(updatedBet)
+    .update(updateData)
     .eq('id', updatedBet.id)
     .select()
     .single()
 
   if (error) {
     console.error('Error updating bet:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    })
     throw error
   }
 
+  console.log('Bet updated successfully:', data)
+  return data
+}
+
+// Specific function for finalizing bets (updating only resultado_final)
+export const finalizeBet = async (betId: string, resultado_final: string) => {
+  console.log('Finalizing bet:', betId, 'with result:', resultado_final)
+
+  const { data, error } = await supabase
+    .from('apostas')
+    .update({ resultado_final })
+    .eq('id', betId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error finalizing bet:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    })
+    throw error
+  }
+
+  console.log('Bet finalized successfully:', data)
   return data
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { getBet, addVote, getVotes, updateBet } from '@/lib/storage'
+import { getBet, addVote, getVotes, finalizeBet } from '@/lib/storage'
 import { useSupabase } from '@/providers/supabase-provider'
 import { Bet, Vote } from '@/types/bet'
 import { ShareButton } from '@/components/share-button'
@@ -147,10 +147,7 @@ export default function BetPage() {
     });
 
     try {
-      const updatedBet = await updateBet({
-        ...bet,
-        resultado_final: finalResult,
-      })
+      const updatedBet = await finalizeBet(bet.id, finalResult)
 
       // Refresh bet data
       const refreshedBet = await getBet(bet.id)

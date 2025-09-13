@@ -106,6 +106,7 @@ export default function CreateBetPage() {
         opcoes: options.filter(opt => opt.trim() !== ''),
         visibilidade: visibility,
         email_criador: user.email,
+        permitir_sem_login: false // Default value for now
       }
 
       const newBet = await addBet(betData)
