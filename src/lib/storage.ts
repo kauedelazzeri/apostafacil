@@ -67,12 +67,10 @@ export const updateBet = async (updatedBet: Bet) => {
 
   console.log('Updating bet with data:', updateData) // Debug log
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('apostas')
     .update(updateData)
     .eq('id', updatedBet.id)
-    .select()
-    .single()
 
   if (error) {
     console.error('Error updating bet:', error)
@@ -85,7 +83,20 @@ export const updateBet = async (updatedBet: Bet) => {
     throw error
   }
 
-  console.log('Bet updated successfully:', data)
+  console.log('Bet updated successfully')
+  
+  // Fetch the updated data separately to avoid 406 error
+  const { data, error: fetchError } = await supabase
+    .from('apostas')
+    .select('*')
+    .eq('id', updatedBet.id)
+    .single()
+    
+  if (fetchError) {
+    console.error('Error fetching updated bet:', fetchError)
+    throw fetchError
+  }
+  
   return data
 }
 
@@ -97,8 +108,6 @@ export const finalizeBet = async (betId: string, resultado_final: string) => {
     .from('apostas')
     .update({ resultado_final })
     .eq('id', betId)
-    .select()
-    .single()
 
   if (error) {
     console.error('Error finalizing bet:', error)
@@ -111,8 +120,22 @@ export const finalizeBet = async (betId: string, resultado_final: string) => {
     throw error
   }
 
-  console.log('Bet finalized successfully:', data)
-  return data
+  console.log('Bet finalized successfully')
+  
+  // Fetch the updated data separately to avoid 406 error
+  const { data: updatedBet, error: fetchError } = await supabase
+    .from('apostas')
+    .select('*')
+    .eq('id', betId)
+    .single()
+    
+  if (fetchError) {
+    console.error('Error fetching updated bet:', fetchError)
+    // Don't throw here, the update was successful
+    return null
+  }
+  
+  return updatedBet
 }
 
 export const getAllBets = async (userEmail?: string | null) => {
