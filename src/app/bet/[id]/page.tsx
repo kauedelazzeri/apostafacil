@@ -372,16 +372,6 @@ export default function BetPage() {
 
           {isCreator && (
             <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-4 text-white">Resultados</h2>
-              <div className="space-y-2">
-                {bet.opcoes.map((option) => (
-                  <div key={option} className="flex items-center gap-2">
-                    <span className="font-medium text-white">{option}:</span>
-                    <span className="text-purple-200">{voteCounts[option] || 0} votos</span>
-                  </div>
-                ))}
-              </div>
-
               {!bet.resultado_final && (
                 <div className="mt-4">
                   <h3 className="text-lg font-medium mb-2 text-white">Finalizar Aposta</h3>
@@ -509,6 +499,73 @@ export default function BetPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Prestação de Contas - Todos os Apostadores */}
+                <div>
+                  <h3 className="text-lg font-medium mb-3 text-white">Resultado</h3>
+                  <div className="bg-white/5 p-4 rounded-lg">
+                    
+                    {/* Estatísticas por opção */}
+                    <div className="mb-4">
+                      <h4 className="text-sm font-medium text-white mb-2">Distribuição de Apostas</h4>
+                      {bet.opcoes.map((option) => {
+                        const optionVoters = votes.filter(vote => vote.opcao_escolhida === option)
+                        const isWinningOption = option === bet.resultado_final
+                        return (
+                          <div key={option} className={`flex justify-between items-center py-2 px-3 rounded mb-1 ${
+                            isWinningOption ? 'bg-green-500/20 border border-green-500/30' : 'bg-white/5'
+                          }`}>
+                            <span className={`font-medium ${isWinningOption ? 'text-green-200' : 'text-white'}`}>
+                              {option} {isWinningOption && '🏆'}
+                            </span>
+                            <span className={`text-sm ${isWinningOption ? 'text-green-200' : 'text-purple-200'}`}>
+                              {optionVoters.length} apostas (R$ {(optionVoters.length * parseFloat(bet.valor_aposta.replace(/[^0-9,]/g, '').replace(',', '.'))).toFixed(2)})
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* Lista completa de apostadores */}
+                    <div>
+                      <h4 className="text-sm font-medium text-white mb-2">Todos os Apostadores ({votes.length})</h4>
+                      <div className="space-y-1">
+                        {votes.map((vote, index) => {
+                          const isWinner = vote.opcao_escolhida === bet.resultado_final
+                          return (
+                            <div key={index} className={`flex justify-between items-center py-2 px-3 rounded text-sm ${
+                              isWinner ? 'bg-green-500/20 border border-green-500/30' : 'bg-white/5'
+                            }`}>
+                              <div className="flex items-center gap-2">
+                                <span className={`font-medium ${isWinner ? 'text-green-200' : 'text-white'}`}>
+                                  {vote.nome_apostador}
+                                </span>
+                                {isWinner && <span className="text-green-400">🏆</span>}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`${isWinner ? 'text-green-200' : 'text-purple-200'}`}>
+                                  {vote.opcao_escolhida}
+                                </span>
+                                <span className={`text-xs ${isWinner ? 'text-green-300' : 'text-purple-300'}`}>
+                                  {isWinner ? `+R$ ${prizePerWinner.toFixed(2)}` : '-R$ ' + bet.valor_aposta}
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-white/10">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-purple-200">Data de finalização:</span>
+                        <span className="text-white">
+                          {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

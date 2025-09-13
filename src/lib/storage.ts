@@ -17,8 +17,6 @@ export const getBet = async (id: string) => {
 }
 
 export const addBet = async (bet: Omit<Bet, 'id' | 'created_at'>) => {
-  console.log('Adding bet:', bet)
-  
   // Ensure opcoes is a valid array
   if (!Array.isArray(bet.opcoes) || bet.opcoes.some(opt => typeof opt !== 'string')) {
     throw new Error('Opções inválidas: todas as opções devem ser strings')
@@ -38,16 +36,9 @@ export const addBet = async (bet: Omit<Bet, 'id' | 'created_at'>) => {
 
   if (error) {
     console.error('Error adding bet:', error)
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint
-    })
     throw new Error(`Error adding bet: ${error.message}`)
   }
 
-  console.log('Bet added successfully:', data)
   return data
 }
 
@@ -65,8 +56,6 @@ export const updateBet = async (updatedBet: Bet) => {
     permitir_sem_login: updatedBet.permitir_sem_login
   }
 
-  console.log('Updating bet with data:', updateData) // Debug log
-
   const { error } = await supabase
     .from('apostas')
     .update(updateData)
@@ -74,16 +63,8 @@ export const updateBet = async (updatedBet: Bet) => {
 
   if (error) {
     console.error('Error updating bet:', error)
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint
-    })
     throw error
   }
-
-  console.log('Bet updated successfully')
   
   // Fetch the updated data separately to avoid 406 error
   const { data, error: fetchError } = await supabase
@@ -221,18 +202,14 @@ export const deleteBet = async (betId: string) => {
 }
 
 export const getAllBets = async (userEmail?: string | null) => {
-  console.log('Fetching bets for user:', userEmail) // Debug log
-
   let query = supabase
     .from('apostas')
     .select('*')
     .is('deleted_at', null) // Filter out deleted bets
 
   if (!userEmail) {
-    console.log('No user email, filtering public bets only') // Debug log
     query = query.eq('visibilidade', 'public')
   } else {
-    console.log('User email found, including private bets') // Debug log
     query = query.or(`and(visibilidade.eq.public),and(visibilidade.eq.private,email_criador.eq.${userEmail})`)
   }
 
@@ -244,7 +221,6 @@ export const getAllBets = async (userEmail?: string | null) => {
     return []
   }
 
-  console.log('Fetched bets:', data?.length, 'bets') // Debug log
   return data || []
 }
 

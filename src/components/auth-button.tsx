@@ -13,8 +13,6 @@ export function AuthButton() {
       ? `${window.location.origin}/auth/callback`
       : `${window.location.origin}/auth/callback`
 
-    console.log('Signing in with redirect URL:', redirectUrl) // Debug log
-
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
