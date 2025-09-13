@@ -1,23 +1,48 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
 
-  console.log('Auth callback called with:', { code: !!code, origin: requestUrl.origin }) // Debug log
+  console.log('Auth callback called with:', { code: !!code, origin: requestUrl.origin })
 
   if (code) {
-    const supabase = createRouteHandlerClient({ cookies })
-    await supabase.auth.exchangeCodeForSession(code)
+    try {
+      const cookieStore = await cookies()
+      
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll()
+            },
+            setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+              cookiesToSet.forEach(({ name, value, options }) => 
+                cookieStore.set(name, value, options)
+              )
+            },
+          },
+        }
+      )
+
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (error) {
+        console.error('Error exchanging code for session:', error)
+      } else {
+        console.log('Successfully exchanged code for session:', !!data.session)
+      }
+    } catch (error) {
+      console.error('Auth callback error:', error)
+    }
   }
 
-  // URL to redirect to after sign in process completes
-  // Use the same origin as the request to ensure it works in both localhost and production
   const redirectUrl = requestUrl.origin
-
-  console.log('Redirecting to:', redirectUrl) // Debug log
+  console.log('Redirecting to:', redirectUrl)
 
   return NextResponse.redirect(new URL('/', redirectUrl))
 } 
