@@ -1,6 +1,6 @@
 # Aposta Fácil 🎲
 
-Uma plataforma moderna e intuitiva para criar e participar de apostas online com amigos. Desenvolvida com Next.js, Supabase e Tailwind CSS.
+Uma plataforma moderna e intuitiva para criar e participar de apostas online com amigos. Desenvolvida com Next.js e Tailwind CSS, utilizando o Supabase como banco de dados e para autenticação.
 
 ## 🚀 Como Usar
 
@@ -58,9 +58,9 @@ Após criar a aposta, você terá acesso a:
 ## 🛠️ Tecnologias
 
 - **Frontend**: Next.js 14, React, Tailwind CSS
-- **Backend**: Supabase (PostgreSQL, Auth)
+- **Backend e Autenticação**: Supabase (PostgreSQL + Auth)
 - **Deploy**: Vercel
-- **Autenticação**: Google OAuth
+- **Login**: Supabase Auth com Google OAuth
 
 ## 🌐 Acesse em
 
@@ -129,15 +129,15 @@ src/
 │   ├── create-bet/       # Página de criação
 │   └── page.tsx          # Home page
 ├── lib/                   # Utilitários
-│   └── storage.ts        # Armazenamento em memória
+│   └── storage.ts        # Acesso ao Supabase
 └── types/                # Definições de tipos
     └── bet.ts           # Tipos de apostas
 ```
 
 ## Notas
 
-- Este é um MVP e usa armazenamento em memória. Em produção, recomenda-se usar um banco de dados.
-- Não há autenticação ou pagamentos reais.
+- Este é um MVP que utiliza o Supabase para armazenar dados e realizar a autenticação.
+- Os pagamentos ainda não são processados automaticamente.
 - O criador da aposta é responsável por coletar e distribuir os valores.
 
 ## Build

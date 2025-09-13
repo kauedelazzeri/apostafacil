@@ -67,7 +67,26 @@ export default function Home() {
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold">Apostas</h1>
-          <AuthButton />
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                track(ANALYTICS_EVENTS.BET_CREATION_START, {
+                  user: user ? getUserProperties(user) : null,
+                  timestamp: new Date().toISOString()
+                })
+                router.push('/create')
+              }}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                user
+                  ? 'bg-purple-600 text-white hover:bg-purple-700'
+                  : 'bg-gray-600 text-gray-300 cursor-not-allowed'
+              }`}
+              disabled={!user}
+            >
+              {user ? 'Criar Nova Aposta' : 'Logue para criar'}
+            </button>
+            <AuthButton />
+          </div>
         </div>
 
         {error && (
@@ -128,25 +147,6 @@ export default function Home() {
           })}
         </div>
 
-        <div className="mt-8 text-center">
-          <button
-            onClick={() => {
-              track(ANALYTICS_EVENTS.BET_CREATION_START, {
-                user: user ? getUserProperties(user) : null,
-                timestamp: new Date().toISOString()
-              });
-              router.push('/create')
-            }}
-            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-              user
-                ? 'bg-purple-600 text-white hover:bg-purple-700'
-                : 'bg-gray-600 text-gray-300 cursor-not-allowed'
-            }`}
-            disabled={!user}
-          >
-            {user ? 'Criar Nova Aposta' : 'Logue para criar uma aposta'}
-          </button>
-        </div>
       </div>
     </main>
   )
