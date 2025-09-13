@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { addBet } from '@/lib/storage'
 import { useSupabase } from '@/providers/supabase-provider'
-import { track } from '@/lib/amplitude'
+import { track } from '@/lib/posthog'
 import { ANALYTICS_EVENTS, getUserProperties } from '@/lib/analytics'
 
 export default function CreateBetPage() {
@@ -43,6 +43,13 @@ export default function CreateBetPage() {
   const addOption = () => {
     setOptions([...options, ''])
     setFormInteractions(prev => prev + 1)
+    track(ANALYTICS_EVENTS.BET_CREATION_OPTION_ADD, {
+      user: user ? getUserProperties(user) : null,
+      currentOptionsCount: options.length,
+      newOptionsCount: options.length + 1,
+      formInteractions,
+      timestamp: new Date().toISOString()
+    });
   }
 
   const removeOption = (index: number) => {
@@ -50,6 +57,14 @@ export default function CreateBetPage() {
       const newOptions = options.filter((_, i) => i !== index)
       setOptions(newOptions)
       setFormInteractions(prev => prev + 1)
+      track(ANALYTICS_EVENTS.BET_CREATION_OPTION_REMOVE, {
+        user: user ? getUserProperties(user) : null,
+        currentOptionsCount: options.length,
+        newOptionsCount: options.length - 1,
+        removedOptionIndex: index,
+        formInteractions,
+        timestamp: new Date().toISOString()
+      });
     }
   }
 
@@ -143,6 +158,50 @@ export default function CreateBetPage() {
       timestamp: new Date().toISOString()
     });
   }
+
+  // Add cleanup effect to track form abandonment
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (formInteractions > 0) {
+        track(ANALYTICS_EVENTS.BET_CREATION_FORM_ABANDON, {
+          user: user ? getUserProperties(user) : null,
+          formInteractions,
+          formData: {
+            title,
+            description,
+            creatorName,
+            betValue,
+            endDate,
+            optionsCount: options.length,
+            visibility,
+          },
+          timestamp: new Date().toISOString()
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Track form abandonment when component unmounts
+      if (formInteractions > 0) {
+        track(ANALYTICS_EVENTS.BET_CREATION_FORM_ABANDON, {
+          user: user ? getUserProperties(user) : null,
+          formInteractions,
+          formData: {
+            title,
+            description,
+            creatorName,
+            betValue,
+            endDate,
+            optionsCount: options.length,
+            visibility,
+          },
+          timestamp: new Date().toISOString()
+        });
+      }
+    };
+  }, [formInteractions, user, title, description, creatorName, betValue, endDate, options, visibility]);
 
   if (!user) {
     return null
@@ -256,8 +315,16 @@ export default function CreateBetPage() {
                 <select
                   value={visibility}
                   onChange={(e) => {
-                    setVisibility(e.target.value as 'public' | 'private')
+                    const newVisibility = e.target.value as 'public' | 'private';
+                    setVisibility(newVisibility)
                     trackFieldChange('visibility', e.target.value)
+                    track(ANALYTICS_EVENTS.BET_CREATION_VISIBILITY_CHANGE, {
+                      user: user ? getUserProperties(user) : null,
+                      previousVisibility: visibility,
+                      newVisibility,
+                      formInteractions,
+                      timestamp: new Date().toISOString()
+                    });
                   }}
                   className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
                 >

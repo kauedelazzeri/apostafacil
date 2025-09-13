@@ -6,7 +6,7 @@ import { getBet, addVote, getVotes, updateBet } from '@/lib/storage'
 import { useSupabase } from '@/providers/supabase-provider'
 import { Bet, Vote } from '@/types/bet'
 import { ShareButton } from '@/components/share-button'
-import { track } from '@/lib/amplitude'
+import { track } from '@/lib/posthog'
 import { ANALYTICS_EVENTS, getBetProperties, getUserProperties, getVoteProperties } from '@/lib/analytics'
 
 export default function BetPage() {

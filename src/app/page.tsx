@@ -7,7 +7,7 @@ import { Bet } from '@/types/bet'
 import { AuthButton } from '@/components/auth-button'
 import { ShareButton } from '@/components/share-button'
 import { useSupabase } from '@/providers/supabase-provider'
-import { track } from '@/lib/amplitude'
+import { track } from '@/lib/posthog'
 import { ANALYTICS_EVENTS, getBetProperties, getUserProperties } from '@/lib/analytics'
 
 export default function Home() {

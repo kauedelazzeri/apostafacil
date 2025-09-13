@@ -11,6 +11,10 @@ export const ANALYTICS_EVENTS = {
   // Bet Creation Funnel
   BET_CREATION_START: 'Bet Creation Start',
   BET_CREATION_FORM_FILL: 'Bet Creation Form Fill',
+  BET_CREATION_OPTION_ADD: 'Bet Creation Option Add',
+  BET_CREATION_OPTION_REMOVE: 'Bet Creation Option Remove',
+  BET_CREATION_VISIBILITY_CHANGE: 'Bet Creation Visibility Change',
+  BET_CREATION_FORM_ABANDON: 'Bet Creation Form Abandon',
   BET_CREATION_SUBMIT: 'Bet Creation Submit',
   BET_CREATION_SUCCESS: 'Bet Creation Success',
   BET_CREATION_ERROR: 'Bet Creation Error',
