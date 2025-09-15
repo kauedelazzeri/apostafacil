@@ -264,4 +264,31 @@ export const getVotes = async (betId: string) => {
   }
 
   return data
+}
+
+export const toggleVoteConsideration = async (voteId: string) => {
+  try {
+    // Get current user session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (!session?.user?.email) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    // Use RPC function to toggle vote consideration
+    const { data: rpcResult, error: rpcError } = await supabase
+      .rpc('toggle_vote_consideration', {
+        vote_id: voteId,
+        user_email: session.user.email
+      })
+
+    if (rpcError) {
+      throw new Error(`Erro ao alterar consideração do voto: ${rpcError.message}`)
+    }
+
+    return rpcResult // Returns the new considerado value (boolean)
+
+  } catch (error) {
+    throw error
+  }
 } 

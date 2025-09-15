@@ -22,6 +22,7 @@ export interface Vote {
   aposta_id: string
   nome_apostador: string
   opcao_escolhida: string
+  considerado: boolean
   created_at: string
 }
 

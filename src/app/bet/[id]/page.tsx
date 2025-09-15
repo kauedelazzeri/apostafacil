@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { getBet, addVote, getVotes, finalizeBet, deleteBet } from '@/lib/storage'
+import { getBet, addVote, getVotes, finalizeBet, deleteBet, toggleVoteConsideration } from '@/lib/storage'
 import { useSupabase } from '@/providers/supabase-provider'
 import { Bet, Vote } from '@/types/bet'
 import { ShareButton } from '@/components/share-button'
@@ -25,6 +25,7 @@ export default function BetPage() {
   const [error, setError] = useState('')
   const [isCreator, setIsCreator] = useState(false)
   const [formInteractions, setFormInteractions] = useState(0)
+  const [togglingVotes, setTogglingVotes] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     // Check if user is trying to access Supabase API directly
@@ -159,6 +160,7 @@ export default function BetPage() {
         aposta_id: bet.id,
         nome_apostador: voterIdentification,
         opcao_escolhida: selectedOption,
+        considerado: true,
       })
 
       // Refresh votes
@@ -290,6 +292,45 @@ export default function BetPage() {
     }
   }
 
+  const handleToggleVoteConsideration = async (voteId: string) => {
+    if (!bet || !isCreator) return
+
+    setTogglingVotes(prev => new Set(prev).add(voteId))
+    setError('')
+
+    try {
+      const newConsiderado = await toggleVoteConsideration(voteId)
+      
+      // Update local state
+      setVotes(prevVotes => 
+        prevVotes.map(vote => 
+          vote.id === voteId 
+            ? { ...vote, considerado: newConsiderado }
+            : vote
+        )
+      )
+
+      // Track the action
+      track('Vote Consideration Toggled', {
+        betId: bet.id,
+        voteId,
+        newConsiderado,
+        user: user ? getUserProperties(user) : null,
+        timestamp: new Date().toISOString()
+      })
+
+    } catch (error) {
+      console.error('Error toggling vote consideration:', error)
+      setError('Erro ao alterar consideração do voto')
+    } finally {
+      setTogglingVotes(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(voteId)
+        return newSet
+      })
+    }
+  }
+
   // Track form field changes
   const trackFieldChange = (field: string, value: string) => {
     setFormInteractions(prev => prev + 1)
@@ -368,15 +409,16 @@ export default function BetPage() {
     )
   }
 
-  // Calculate vote counts and winners
+  // Calculate vote counts and winners (only considering valid votes)
+  const validVotes = votes.filter(vote => vote.considerado)
   const voteCounts = bet.opcoes.reduce((acc, option) => {
-    acc[option] = votes.filter(vote => vote.opcao_escolhida === option).length
+    acc[option] = validVotes.filter(vote => vote.opcao_escolhida === option).length
     return acc
   }, {} as Record<string, number>)
 
-  // Calculate winners and prizes
-  const winners = bet.resultado_final ? votes.filter(vote => vote.opcao_escolhida === bet.resultado_final) : []
-  const totalValue = votes.length * (parseFloat(bet.valor_aposta.replace(/[^0-9,]/g, '').replace(',', '.')) || 0)
+  // Calculate winners and prizes (only considering valid votes)
+  const winners = bet.resultado_final ? validVotes.filter(vote => vote.opcao_escolhida === bet.resultado_final) : []
+  const totalValue = validVotes.length * (parseFloat(bet.valor_aposta.replace(/[^0-9,]/g, '').replace(',', '.')) || 0)
   const prizePerWinner = winners.length > 0 ? totalValue / winners.length : 0
 
   const betUrl = `${typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/bet/${bet.id}`
@@ -636,6 +678,7 @@ export default function BetPage() {
                       <h4 className="text-sm font-medium text-white mb-2">Distribuição de Apostas</h4>
                       {bet.opcoes.map((option) => {
                         const optionVoters = votes.filter(vote => vote.opcao_escolhida === option)
+                        const validOptionVoters = validVotes.filter(vote => vote.opcao_escolhida === option)
                         const isWinningOption = option === bet.resultado_final
                         return (
                           <div key={option} className={`flex justify-between items-center py-2 px-3 rounded mb-1 ${
@@ -645,7 +688,7 @@ export default function BetPage() {
                               {option} {isWinningOption && '🏆'}
                             </span>
                             <span className={`text-sm ${isWinningOption ? 'text-green-200' : 'text-purple-200'}`}>
-                              {optionVoters.length} apostas (R$ {(optionVoters.length * parseFloat(bet.valor_aposta.replace(/[^0-9,]/g, '').replace(',', '.'))).toFixed(2)})
+                              {validOptionVoters.length} apostas válidas{optionVoters.length !== validOptionVoters.length && ` (${optionVoters.length} total)`} (R$ {(validOptionVoters.length * parseFloat(bet.valor_aposta.replace(/[^0-9,]/g, '').replace(',', '.'))).toFixed(2)})
                             </span>
                           </div>
                         )
@@ -654,27 +697,68 @@ export default function BetPage() {
 
                     {/* Lista completa de apostadores */}
                     <div>
-                      <h4 className="text-sm font-medium text-white mb-2">Todos os Apostadores ({votes.length})</h4>
+                      <h4 className="text-sm font-medium text-white mb-2">
+                        Todos os Apostadores ({validVotes.length} válidos de {votes.length} total)
+                      </h4>
                       <div className="space-y-1">
                         {votes.map((vote, index) => {
-                          const isWinner = vote.opcao_escolhida === bet.resultado_final
+                          const isWinner = vote.opcao_escolhida === bet.resultado_final && vote.considerado
+                          const isToggling = togglingVotes.has(vote.id)
                           return (
                             <div key={index} className={`flex justify-between items-center py-2 px-3 rounded text-sm ${
-                              isWinner ? 'bg-green-500/20 border border-green-500/30' : 'bg-white/5'
+                              !vote.considerado 
+                                ? 'bg-red-500/10 border border-red-500/30 opacity-60' 
+                                : isWinner 
+                                  ? 'bg-green-500/20 border border-green-500/30' 
+                                  : 'bg-white/5'
                             }`}>
                               <div className="flex items-center gap-2">
-                                <span className={`font-medium ${isWinner ? 'text-green-200' : 'text-white'}`}>
+                                <span className={`font-medium ${
+                                  !vote.considerado 
+                                    ? 'text-red-200 line-through' 
+                                    : isWinner 
+                                      ? 'text-green-200' 
+                                      : 'text-white'
+                                }`}>
                                   {vote.nome_apostador}
                                 </span>
-                                {isWinner && <span className="text-green-400">🏆</span>}
+                                {!vote.considerado && <span className="text-red-400 text-xs">❌ Desconsiderado</span>}
+                                {isWinner && vote.considerado && <span className="text-green-400">🏆</span>}
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className={`${isWinner ? 'text-green-200' : 'text-purple-200'}`}>
+                                <span className={`${
+                                  !vote.considerado 
+                                    ? 'text-red-200' 
+                                    : isWinner 
+                                      ? 'text-green-200' 
+                                      : 'text-purple-200'
+                                }`}>
                                   {vote.opcao_escolhida}
                                 </span>
-                                <span className={`text-xs ${isWinner ? 'text-green-300' : 'text-purple-300'}`}>
-                                  {isWinner ? `+R$ ${prizePerWinner.toFixed(2)}` : '-R$ ' + bet.valor_aposta}
+                                <span className={`text-xs ${
+                                  !vote.considerado 
+                                    ? 'text-red-300' 
+                                    : isWinner 
+                                      ? 'text-green-300' 
+                                      : 'text-purple-300'
+                                }`}>
+                                  {vote.considerado && isWinner ? `+R$ ${prizePerWinner.toFixed(2)}` : 
+                                   vote.considerado ? '-R$ ' + bet.valor_aposta : 
+                                   'Não considerado'}
                                 </span>
+                                {isCreator && (
+                                  <button
+                                    onClick={() => handleToggleVoteConsideration(vote.id)}
+                                    disabled={isToggling}
+                                    className={`ml-2 px-2 py-1 text-xs rounded transition-colors ${
+                                      vote.considerado
+                                        ? 'bg-red-500/20 text-red-200 hover:bg-red-500/30'
+                                        : 'bg-green-500/20 text-green-200 hover:bg-green-500/30'
+                                    } disabled:opacity-50`}
+                                  >
+                                    {isToggling ? '...' : vote.considerado ? 'Desconsiderar' : 'Considerar'}
+                                  </button>
+                                )}
                               </div>
                             </div>
                           )
