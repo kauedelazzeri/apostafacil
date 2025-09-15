@@ -11,11 +11,13 @@ export default function AuthRedirectPage() {
   useEffect(() => {
     if (!isLoading) {
       // Get the stored return URL from sessionStorage
-      const returnToUrl = sessionStorage.getItem('returnToUrl')
+      const returnToUrl = typeof window !== 'undefined' ? sessionStorage.getItem('returnToUrl') : null
       
       if (returnToUrl) {
         // Clear the stored URL
-        sessionStorage.removeItem('returnToUrl')
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('returnToUrl')
+        }
         console.log('Redirecting to stored URL:', returnToUrl)
         router.replace(returnToUrl)
       } else {

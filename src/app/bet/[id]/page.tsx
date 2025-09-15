@@ -513,12 +513,12 @@ export default function BetPage() {
               {!bet.resultado_final && (
                 <div className="mt-4">
                   <h3 className="text-lg font-medium mb-2 text-white">Finalizar Aposta</h3>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {bet.opcoes.map((option) => (
                       <button
                         key={option}
                         onClick={() => setFinalResult(option)}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
                           finalResult === option
                             ? 'bg-purple-600 text-white'
                             : 'bg-white/10 text-white hover:bg-white/20'
@@ -531,7 +531,7 @@ export default function BetPage() {
                   <button
                     onClick={handleFinalizeBet}
                     disabled={!finalResult}
-                    className="mt-4 w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-purple-900/50 transition-colors"
+                    className="mt-4 w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-purple-900/50 transition-colors text-sm sm:text-base"
                   >
                     Finalizar Aposta
                   </button>
@@ -543,7 +543,7 @@ export default function BetPage() {
                 <button
                   onClick={handleDeleteBet}
                   disabled={isDeleting}
-                  className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-900/50 transition-colors"
+                  className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-900/50 transition-colors text-sm sm:text-base"
                 >
                   {isDeleting ? 'Deletando...' : 'Deletar Aposta'}
                 </button>
@@ -638,18 +638,18 @@ export default function BetPage() {
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-medium mb-2 text-white">Resumo Financeiro</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-purple-200">Total Apostado</p>
-                      <p className="font-medium text-white">R$ {totalValue.toFixed(2)}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    <div className="bg-white/5 p-3 rounded-lg">
+                      <p className="text-xs sm:text-sm text-purple-200">Total Apostado</p>
+                      <p className="font-medium text-white text-sm sm:text-base">R$ {totalValue.toFixed(2)}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-purple-200">Número de Ganhadores</p>
-                      <p className="font-medium text-white">{winners.length}</p>
+                    <div className="bg-white/5 p-3 rounded-lg">
+                      <p className="text-xs sm:text-sm text-purple-200">Número de Ganhadores</p>
+                      <p className="font-medium text-white text-sm sm:text-base">{winners.length}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-purple-200">Valor por Ganhador</p>
-                      <p className="font-medium text-white">R$ {prizePerWinner.toFixed(2)}</p>
+                    <div className="bg-white/5 p-3 rounded-lg">
+                      <p className="text-xs sm:text-sm text-purple-200">Valor por Ganhador</p>
+                      <p className="font-medium text-white text-sm sm:text-base">R$ {prizePerWinner.toFixed(2)}</p>
                     </div>
                   </div>
                 </div>
@@ -681,15 +681,17 @@ export default function BetPage() {
                         const validOptionVoters = validVotes.filter(vote => vote.opcao_escolhida === option)
                         const isWinningOption = option === bet.resultado_final
                         return (
-                          <div key={option} className={`flex justify-between items-center py-2 px-3 rounded mb-1 ${
+                          <div key={option} className={`py-2 px-3 rounded mb-1 ${
                             isWinningOption ? 'bg-green-500/20 border border-green-500/30' : 'bg-white/5'
                           }`}>
-                            <span className={`font-medium ${isWinningOption ? 'text-green-200' : 'text-white'}`}>
-                              {option} {isWinningOption && '🏆'}
-                            </span>
-                            <span className={`text-sm ${isWinningOption ? 'text-green-200' : 'text-purple-200'}`}>
-                              {validOptionVoters.length} apostas válidas{optionVoters.length !== validOptionVoters.length && ` (${optionVoters.length} total)`} (R$ {(validOptionVoters.length * parseFloat(bet.valor_aposta.replace(/[^0-9,]/g, '').replace(',', '.'))).toFixed(2)})
-                            </span>
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2">
+                              <span className={`font-medium ${isWinningOption ? 'text-green-200' : 'text-white'}`}>
+                                {option} {isWinningOption && '🏆'}
+                              </span>
+                              <span className={`text-xs sm:text-sm ${isWinningOption ? 'text-green-200' : 'text-purple-200'}`}>
+                                {validOptionVoters.length} apostas válidas{optionVoters.length !== validOptionVoters.length && ` (${optionVoters.length} total)`} (R$ {(validOptionVoters.length * parseFloat(bet.valor_aposta.replace(/[^0-9,]/g, '').replace(',', '.'))).toFixed(2)})
+                              </span>
+                            </div>
                           </div>
                         )
                       })}
@@ -705,60 +707,65 @@ export default function BetPage() {
                           const isWinner = vote.opcao_escolhida === bet.resultado_final && vote.considerado
                           const isToggling = togglingVotes.has(vote.id)
                           return (
-                            <div key={index} className={`flex justify-between items-center py-2 px-3 rounded text-sm ${
+                            <div key={index} className={`py-2 px-3 rounded text-sm ${
                               !vote.considerado 
                                 ? 'bg-red-500/10 border border-red-500/30 opacity-60' 
                                 : isWinner 
                                   ? 'bg-green-500/20 border border-green-500/30' 
                                   : 'bg-white/5'
                             }`}>
-                              <div className="flex items-center gap-2">
-                                <span className={`font-medium ${
-                                  !vote.considerado 
-                                    ? 'text-red-200 line-through' 
-                                    : isWinner 
-                                      ? 'text-green-200' 
-                                      : 'text-white'
-                                }`}>
-                                  {vote.nome_apostador}
-                                </span>
-                                {!vote.considerado && <span className="text-red-400 text-xs">❌ Desconsiderado</span>}
-                                {isWinner && vote.considerado && <span className="text-green-400">🏆</span>}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className={`${
-                                  !vote.considerado 
-                                    ? 'text-red-200' 
-                                    : isWinner 
-                                      ? 'text-green-200' 
-                                      : 'text-purple-200'
-                                }`}>
-                                  {vote.opcao_escolhida}
-                                </span>
-                                <span className={`text-xs ${
-                                  !vote.considerado 
-                                    ? 'text-red-300' 
-                                    : isWinner 
-                                      ? 'text-green-300' 
-                                      : 'text-purple-300'
-                                }`}>
-                                  {vote.considerado && isWinner ? `+R$ ${prizePerWinner.toFixed(2)}` : 
-                                   vote.considerado ? '-R$ ' + bet.valor_aposta : 
-                                   'Não considerado'}
-                                </span>
-                                {isCreator && (
-                                  <button
-                                    onClick={() => handleToggleVoteConsideration(vote.id)}
-                                    disabled={isToggling}
-                                    className={`ml-2 px-2 py-1 text-xs rounded transition-colors ${
-                                      vote.considerado
-                                        ? 'bg-red-500/20 text-red-200 hover:bg-red-500/30'
-                                        : 'bg-green-500/20 text-green-200 hover:bg-green-500/30'
-                                    } disabled:opacity-50`}
-                                  >
-                                    {isToggling ? '...' : vote.considerado ? 'Desconsiderar' : 'Considerar'}
-                                  </button>
-                                )}
+                              {/* Mobile layout: stack vertically */}
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className={`font-medium ${
+                                    !vote.considerado 
+                                      ? 'text-red-200 line-through' 
+                                      : isWinner 
+                                        ? 'text-green-200' 
+                                        : 'text-white'
+                                  }`}>
+                                    {vote.nome_apostador}
+                                  </span>
+                                  {!vote.considerado && <span className="text-red-400 text-xs">❌ Desconsiderado</span>}
+                                  {isWinner && vote.considerado && <span className="text-green-400">🏆</span>}
+                                </div>
+                                <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`${
+                                      !vote.considerado 
+                                        ? 'text-red-200' 
+                                        : isWinner 
+                                          ? 'text-green-200' 
+                                          : 'text-purple-200'
+                                    }`}>
+                                      {vote.opcao_escolhida}
+                                    </span>
+                                    <span className={`text-xs ${
+                                      !vote.considerado 
+                                        ? 'text-red-300' 
+                                        : isWinner 
+                                          ? 'text-green-300' 
+                                          : 'text-purple-300'
+                                    }`}>
+                                      {vote.considerado && isWinner ? `+R$ ${prizePerWinner.toFixed(2)}` : 
+                                       vote.considerado ? '-R$ ' + bet.valor_aposta : 
+                                       'Não considerado'}
+                                    </span>
+                                  </div>
+                                  {isCreator && (
+                                    <button
+                                      onClick={() => handleToggleVoteConsideration(vote.id)}
+                                      disabled={isToggling}
+                                      className={`px-2 py-1 text-xs rounded transition-colors whitespace-nowrap ${
+                                        vote.considerado
+                                          ? 'bg-red-500/20 text-red-200 hover:bg-red-500/30'
+                                          : 'bg-green-500/20 text-green-200 hover:bg-green-500/30'
+                                      } disabled:opacity-50`}
+                                    >
+                                      {isToggling ? '...' : vote.considerado ? 'Desconsiderar' : 'Considerar'}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           )
