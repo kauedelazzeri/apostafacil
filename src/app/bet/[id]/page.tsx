@@ -135,13 +135,29 @@ export default function BetPage() {
 
     try {
       if (!bet) return
-      if (!voterName || !selectedOption) {
-        throw new Error('Por favor, preencha seu nome e selecione uma opção')
+      
+      let voterIdentification: string;
+      
+      if (bet.permitir_sem_login) {
+        // Para apostas que permitem voto sem login, usa o nome inserido
+        if (!voterName || !selectedOption) {
+          throw new Error('Por favor, preencha seu nome e selecione uma opção')
+        }
+        voterIdentification = voterName;
+      } else {
+        // Para apostas que exigem login, usa o email do usuário
+        if (!user || !user.email) {
+          throw new Error('Você precisa estar logado para votar nesta aposta')
+        }
+        if (!selectedOption) {
+          throw new Error('Por favor, selecione uma opção')
+        }
+        voterIdentification = user.user_metadata?.full_name || user.email;
       }
 
       const vote = await addVote({
         aposta_id: bet.id,
-        nome_apostador: voterName,
+        nome_apostador: voterIdentification,
         opcao_escolhida: selectedOption,
       })
 
@@ -494,50 +510,80 @@ export default function BetPage() {
           )}
 
           {!isCreator && !bet.resultado_final && (
-            <form onSubmit={handleVote} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Seu Nome *</label>
-                <input
-                  type="text"
-                  value={voterName}
-                  onChange={(e) => {
-                    setVoterName(e.target.value)
-                    trackFieldChange('voterName', e.target.value)
-                  }}
-                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-purple-300"
-                  placeholder="Como você quer ser identificado"
-                  required
-                />
-              </div>
+            <>
+              {/* Verificar se exige login para votar */}
+              {!bet.permitir_sem_login && !user ? (
+                <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl shadow-xl border border-yellow-500/50">
+                  <div className="text-center">
+                    <h3 className="text-xl font-bold text-yellow-400 mb-4">🔐 Login Necessário</h3>
+                    <p className="text-gray-300 mb-6">
+                      Esta aposta exige login para votar. Faça login para participar e evitar votos falsos.
+                    </p>
+                    <AuthButton />
+                    <p className="text-sm text-purple-300 mt-4">
+                      Após fazer login, você será identificado pelo seu email do Google.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleVote} className="space-y-4">
+                  {/* Campo nome - só mostrar se permite voto sem login */}
+                  {bet.permitir_sem_login && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Seu Nome *</label>
+                      <input
+                        type="text"
+                        value={voterName}
+                        onChange={(e) => {
+                          setVoterName(e.target.value)
+                          trackFieldChange('voterName', e.target.value)
+                        }}
+                        className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder:text-purple-300"
+                        placeholder="Como você quer ser identificado"
+                        required
+                      />
+                    </div>
+                  )}
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Sua Escolha *</label>
-                <select
-                  value={selectedOption}
-                  onChange={(e) => {
-                    setSelectedOption(e.target.value)
-                    trackFieldChange('selectedOption', e.target.value)
-                  }}
-                  className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
-                  required
-                >
-                  <option value="">Selecione uma opção</option>
-                  {bet.opcoes.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  {/* Mostrar info do usuário logado se exige login */}
+                  {!bet.permitir_sem_login && user && (
+                    <div className="bg-green-500/20 border border-green-500/50 p-4 rounded-lg">
+                      <p className="text-sm text-green-200 mb-1">Votando como:</p>
+                      <p className="text-white font-medium">{user.user_metadata?.full_name || user.email}</p>
+                      <p className="text-sm text-green-300">{user.email}</p>
+                    </div>
+                  )}
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:bg-purple-900/50"
-              >
-                {isLoading ? 'Registrando...' : 'Registrar Aposta'}
-              </button>
-            </form>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Sua Escolha *</label>
+                    <select
+                      value={selectedOption}
+                      onChange={(e) => {
+                        setSelectedOption(e.target.value)
+                        trackFieldChange('selectedOption', e.target.value)
+                      }}
+                      className="w-full px-3 py-2 bg-white/10 border border-purple-500/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+                      required
+                    >
+                      <option value="">Selecione uma opção</option>
+                      {bet.opcoes.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:bg-purple-900/50"
+                  >
+                    {isLoading ? 'Registrando...' : 'Registrar Aposta'}
+                  </button>
+                </form>
+              )}
+            </>
           )}
 
           {bet.resultado_final && (

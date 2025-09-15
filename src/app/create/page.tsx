@@ -17,6 +17,7 @@ export default function CreateBetPage() {
   const [endDate, setEndDate] = useState('')
   const [options, setOptions] = useState<string[]>(['', ''])
   const [visibility, setVisibility] = useState<'public' | 'private'>('public')
+  const [requireLogin, setRequireLogin] = useState(false)
   const [error, setError] = useState('')
   const [formInteractions, setFormInteractions] = useState(0)
 
@@ -106,7 +107,7 @@ export default function CreateBetPage() {
         opcoes: options.filter(opt => opt.trim() !== ''),
         visibilidade: visibility,
         email_criador: user.email,
-        permitir_sem_login: false // Default value for now
+        permitir_sem_login: !requireLogin // Inverte porque requireLogin true = permitir_sem_login false
       }
 
       const newBet = await addBet(betData)
@@ -202,7 +203,7 @@ export default function CreateBetPage() {
         });
       }
     };
-  }, [formInteractions, user, title, description, creatorName, betValue, endDate, options, visibility]);
+  }, [formInteractions, user, title, description, creatorName, betValue, endDate, options, visibility, requireLogin]);
 
   if (!user) {
     return null
@@ -332,6 +333,49 @@ export default function CreateBetPage() {
                   <option value="public">Pública</option>
                   <option value="private">Privada</option>
                 </select>
+                <p className="text-sm text-purple-300 mt-1">
+                  {visibility === 'public' 
+                    ? 'Qualquer pessoa poderá ver esta aposta na listagem principal'
+                    : 'Esta aposta só será acessível através do link direto'}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Controle de Votação</label>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="loginRequired"
+                      checked={!requireLogin}
+                      onChange={() => {
+                        setRequireLogin(false)
+                        trackFieldChange('requireLogin', 'false')
+                      }}
+                      className="form-radio text-purple-500 bg-white/10 border-purple-500/50"
+                    />
+                    <div>
+                      <span className="text-white">Permitir votação sem login</span>
+                      <p className="text-sm text-purple-300">Qualquer pessoa pode votar inserindo seu nome</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="loginRequired"
+                      checked={requireLogin}
+                      onChange={() => {
+                        setRequireLogin(true)
+                        trackFieldChange('requireLogin', 'true')
+                      }}
+                      className="form-radio text-purple-500 bg-white/10 border-purple-500/50"
+                    />
+                    <div>
+                      <span className="text-white">Exigir login para votar</span>
+                      <p className="text-sm text-purple-300">Apenas usuários logados podem votar (previne votos falsos)</p>
+                    </div>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
